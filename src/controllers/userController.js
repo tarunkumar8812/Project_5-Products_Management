@@ -50,7 +50,7 @@ async function createUser(req, res) {
           let pObj = obj[item];
           for (key of addressFields) {
             if (!Object.keys(pObj).includes(key)) {
-              err.push(`${key} is required`);
+              err.push(`${key} is required in ${item}`);
               continue;
             }
             if (key === "pincode") {
