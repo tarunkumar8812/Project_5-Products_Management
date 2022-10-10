@@ -1,8 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const multer=require("multer")
 const router = require("./router/router");
 const app = express();
 app.use(express.json());
+app.use(multer().any())
 app.use(express.urlencoded({ extended: true }));
 mongoose
   .connect(
@@ -16,5 +18,5 @@ app.use("/", router);
 app.use("/*", (req, res) => res.send("invalid url"));
 
 app.listen(3000, () => {
-  console.log("Express app is running on" + 3000);
+  console.log("Express app is running on:" + 3000);
 });
