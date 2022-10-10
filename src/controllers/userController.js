@@ -21,24 +21,19 @@ async function createUser(req, res) {
       "password",
       "address",
     ];
-    for (field of requiredFields) {
-      if (!Object.keys(data).includes(field)) {
-        return res.status(400).send({
-          status: false,
-          message: `${field} is required`,
-        });
-      }
-    }
+    let err = [];
     const addressFields = ["street", "city", "pincode"];
     const sb_Fields = ["shipping", "billing"];
     const unique = ["email", "phone"];
     for (field of requiredFields) {
+      if (!Object.keys(data).includes(field)) {
+        err.push(`${field} is required`);
+        continue;
+      }
       if (field === "address") {
         if (typeof data[field] !== "object") {
-          return res.status(400).send({
-            status: false,
-            message: `${field} must be in object format`,
-          });
+          err.push(`${field} must be in object format`);
+          continue;
         }
         for (item of sb_Fields) {
           let obj = data[field];
@@ -46,61 +41,54 @@ async function createUser(req, res) {
           for (key of addressFields) {
             if (key === "pincode") {
               if (!isValidPincode(pObj[key])) {
-                return res.status(400).send({
-                  status: false,
-                  message: `${key} must be in 6 digits`,
-                });
+                err.push(`${key} must be in 6 digits`);
               }
               continue;
             }
             if (!isValidString(pObj[key])) {
-              return res.status(400).send({
-                status: false,
-                message: `${key} must be in string format`,
-              });
+              err.push(`${key} must be in string format`);
             }
           }
         }
         continue;
       }
       if (!isValidString(data[field])) {
-        return res.status(800).send({
-          status: false,
-          message: `${field} must be in string format`,
-        });
+        err.push(`${field} must be in string format`);
+        continue;
       }
       if (field === "profileImage") {
-        if (!isValidUrl(data[field]))
-          return res.status(400).send({
-            status: false,
-            message: `invalid ${field}`,
-          });
+        if (!isValidUrl(data[field])) err.push(`invalid ${field}`);
       }
-      for (uni of unique) {
-        if (uni === "email") {
-          if (!isValidEmail(data[uni]))
-            return res.status(400).send({
-              status: false,
-              message: `invalid ${uni}`,
-            });
-        }
-        if (uni === "phone") {
-          if (!isValidPhn(data[uni]))
-            return res.status(400).send({
-              status: false,
-              message: `invalid ${uni}`,
-            });
-        }
-        let emp = {};
-        emp[uni] = data[uni];
-        let doc = await userModel.findOne(emp);
-        if (doc) {
-          return res.status(400).send({
-            status: false,
-            message: `${uni} is already taken`,
-          });
+    }
+    for (uni of unique) {
+      if (!Object.keys(data).includes(uni)) {
+        continue;
+      }
+      if (uni === "email") {
+        if (!isValidEmail(data[uni])) {
+          err.push(`invalid ${uni}`);
+          continue;
         }
       }
+      if (uni === "phone") {
+        if (!isValidPhn(data[uni])) {
+          err.push(`invalid ${uni} number`);
+          continue;
+        }
+      }
+      let emp = {};
+      emp[uni] = data[uni];
+      let doc = await userModel.findOne(emp);
+      if (doc) {
+        err.push(`${uni} is already taken`);
+      }
+    }
+
+    if (err.length > 0) {
+      return res.status(400).send({
+        status: false,
+        message: err.join(", "),
+      });
     }
 
     const createdData = await userModel.create(data);
