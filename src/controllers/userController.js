@@ -11,6 +11,12 @@ const {
 async function createUser(req, res) {
   try {
     const data = req.body;
+    if (!Object.keys(data).includes("address")) {
+      return res.status(400).send({
+        status: false,
+        message: "address is required",
+      });
+    }
     data.address = JSON.parse(data.address);
     const requiredFields = [
       "fname",
@@ -36,9 +42,17 @@ async function createUser(req, res) {
           continue;
         }
         for (item of sb_Fields) {
+          if (!Object.keys(data[field]).includes(item)) {
+            err.push(`${item} is required`);
+            continue;
+          }
           let obj = data[field];
           let pObj = obj[item];
           for (key of addressFields) {
+            if (!Object.keys(pObj).includes(key)) {
+              err.push(`${key} is required`);
+              continue;
+            }
             if (key === "pincode") {
               if (!isValidPincode(pObj[key])) {
                 err.push(`${key} must be in 6 digits`);
@@ -58,6 +72,12 @@ async function createUser(req, res) {
       }
       if (field === "profileImage") {
         if (!isValidUrl(data[field])) err.push(`invalid ${field}`);
+      }
+      if (field === "password") {
+        if (!isValidPass(data[field]))
+          err.push(
+            "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)"
+          );
       }
     }
     for (uni of unique) {
