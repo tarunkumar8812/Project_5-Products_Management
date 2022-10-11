@@ -1,6 +1,8 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken")
+const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
 
 const {
   isValidString,
@@ -124,7 +126,7 @@ async function createUser(req, res) {
     }
 
     const createdData = await userModel.create(data);
-    
+
     return res.status(201).send({ status: true, data: createdData });
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
@@ -141,9 +143,13 @@ const login = async function (req, res) {
   try {
     const creadentials = req.body
 
+    
+
     let { email, password, ...rest } = creadentials
 
     // ---------------- Applying Validation ------------
+    if (Object.keys(creadentials).length == 0) return res.status(400).send({ status: false, message: "Please fill data in body" })
+
     if (Object.keys(rest).length > 0) {
       return res.status(400).send({ status: false, message: `You can not fill these:- ( ${Object.keys(rest)} )field` })
     }
@@ -154,7 +160,7 @@ const login = async function (req, res) {
 
     // --------- checking creadentials in DB -------------
     let user_in_DB = await userModel.findOne({ email });
-    if (!user_in_DB) return res.status(401).send({ status: false, message: "invalid credentials (email or the password is not corerct)" })
+    if (!user_in_DB) return res.status(401).send({ status: false, message: "invalid credentials (email or the password is not correct)" })
 
     bcrypt.compare(password, user_in_DB.password, function (err, result) {
       if (result !== true) {
@@ -167,7 +173,7 @@ const login = async function (req, res) {
             userId: user_in_DB._id.toString(),
             exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // After 24 hour it will expire 
             iat: Math.floor(Date.now() / 1000)
-          }, "FunctionUp Group No 57");
+          }, "FunctionUp Group No 23");
 
         res.setHeader("x-api-key", token);
 
@@ -187,4 +193,38 @@ const login = async function (req, res) {
   }
 }
 
-module.exports = { createUser, login };
+const getUser = async function (req, res) {
+  try {
+
+    const userId = req.params.userId
+    if(userId===":userId"){
+      return res.status(400).send({ status: false, message: "userId required" }); 
+    }
+if(!ObjectId.isValid(userId)){
+  return res.status(400).send({ status: false, message: "invalid userId" });
+}
+
+    if (req.decoded.userId === userId) {
+      const getUser = await userModel.findById(userId)
+      if (!getUser) {
+        return res.status(404).send({ status: false, message: "user not exist" });
+      }
+
+      return res.status(200).send({ status: true, data: getUser });
+
+    }
+
+
+  }
+  catch (err) {
+    return res.status(500).send({ status: false, message: err.message })
+  }
+}
+
+module.exports = { createUser, login, getUser };
+// Allow an user to fetch details of their profile.
+// Make sure that userId in url param and in token is same
+// Response format
+// On success - Return HTTP status 200 and returns the user document. The response should be a JSON object like this
+// On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
+// {
