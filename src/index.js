@@ -18,5 +18,5 @@ app.use("/", router);
 app.use("/*", (req, res) => res.send("invalid url"));
 
 app.listen(3000, () => {
-  console.log("Express app is running on:" + 3000);
+  console.log("Express app is running on: " + 3000);
 });
