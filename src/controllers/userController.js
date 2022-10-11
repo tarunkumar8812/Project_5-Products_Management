@@ -1,4 +1,5 @@
 const userModel = require("../models/userModel");
+const bcrypt = require("bcrypt");
 const {
   isValidString,
   isValidEmail,
@@ -78,6 +79,13 @@ async function createUser(req, res) {
           err.push(
             "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)"
           );
+        bcrypt.hash(data[field], 5, function (err, hash) {
+          // Store hash in your password DB.
+          if (err) {
+            err.push(err.message);
+          }
+          data.password = hash;
+        });
       }
     }
     for (uni of unique) {
