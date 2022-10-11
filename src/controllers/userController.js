@@ -1,5 +1,7 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken")
+
 const {
   isValidString,
   isValidEmail,
@@ -7,6 +9,8 @@ const {
   isValidPhn,
   isValidPass,
   isValidPincode,
+  validEmail,
+  validPW_4_Login
 } = require("../validations/validator");
 
 async function createUser(req, res) {
@@ -126,4 +130,60 @@ async function createUser(req, res) {
   }
 }
 
-module.exports = { createUser };
+
+
+
+
+// --------------------------- Login API --------------------------
+
+const login = async function (req, res) {
+  try {
+    const creadentials = req.body
+
+    let { email, password, ...rest } = creadentials
+
+    // ---------------- Applying Validation ------------
+    if (Object.keys(rest).length > 0) {
+      return res.status(400).send({ status: false, message: `You can not fill these:- ( ${Object.keys(rest)} )field` })
+    }
+
+    if (validEmail(email) != true) return res.status(400).send({ status: false, message: `${validEmail(email)}` })
+
+    if (validPW_4_Login(password) != true) return res.status(400).send({ status: false, message: `${validPW_4_Login(password)}` })
+
+    // --------- checking creadentials in DB -------------
+    let user_in_DB = await userModel.findOne({ email });
+    if (!user_in_DB) return res.status(401).send({ status: false, message: "invalid credentials (email or the password is not corerct)" })
+
+    bcrypt.compare(password, user_in_DB.password, function (err, result) {
+      if (result !== true) {
+        return res.status(401).send({ success: false, message: 'passwords do not match' });
+      } else {
+
+        // ---------- creating JWT Token ------------
+        let token = jwt.sign(
+          {
+            userId: user_in_DB._id.toString(),
+            exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // After 24 hour it will expire 
+            iat: Math.floor(Date.now() / 1000)
+          }, "FunctionUp Group No 57");
+
+        res.setHeader("x-api-key", token);
+
+        let data = {
+          token: token,
+          userId: user_in_DB._id.toString(),
+        }
+
+        return res.status(200).send({ status: true, message: "Token has been successfully generated.", data: data });
+      }
+
+    });
+
+  }
+  catch (err) {
+    return res.status(500).send({ status: false, message: err.message })
+  }
+}
+
+module.exports = { createUser, login };

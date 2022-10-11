@@ -32,6 +32,36 @@ function isValidPincode(value) {
   return pincodeRegex.test(value);
 }
 
+
+
+// ------------- validation of email -------------
+
+const validEmail = function (value) {
+  if (value == undefined) { return "Email is mandatory" }
+  if (typeof value !== "string") { return "Email must be string" }
+  if (value.trim() == "") { return "Email can not be empty" }
+
+  let regex2 = /^[a-zA-Z0-9.]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}/;
+  let validRegex2 = regex2.test(value.trim())
+  if (validRegex2 == false) { return `Invalid Email, ex:- ( abc123@gmail.com )` }
+
+  let regex1 = /^(?=.*[A-Za-z])/
+  let validRegex1 = regex1.test(value.trim()[0])
+  if (validRegex1 == false) { return `First letter of Email must be alphabet` }
+
+  return true
+}
+
+const validPW_4_Login = function (value) {
+  if (value == undefined) { return "Password is mandatory" }
+  if (typeof value !== "string") { return "Password must be string" }
+  if (value.trim() == "") { return "Password can not be empty" }
+  if (value.trim().length < 8) { return "Use strong password, minimum 8 chacracters are required" }
+  if (value.trim().length > 15) { return "Too long password, maximum 15 chacracters are allowed" }
+
+  return true
+}
+
 module.exports = {
   isValidString,
   isValidEmail,
@@ -39,4 +69,6 @@ module.exports = {
   isValidPhn,
   isValidPass,
   isValidPincode,
+  validEmail,
+  validPW_4_Login
 };
