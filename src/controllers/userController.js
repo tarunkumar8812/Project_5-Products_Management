@@ -1,8 +1,8 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken")
-const mongoose = require('mongoose')
-const ObjectId = mongoose.Types.ObjectId
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 
 const {
   isValidString,
@@ -12,7 +12,7 @@ const {
   isValidPass,
   isValidPincode,
   validEmail,
-  validPW_4_Login
+  validPW_4_Login,
 } = require("../validations/validator");
 
 async function createUser(req, res) {
@@ -133,10 +133,6 @@ async function createUser(req, res) {
   }
 }
 
-
-
-
-
 // --------------------------- Login API --------------------------
 
 const login = async function (req, res) {
@@ -150,82 +146,225 @@ const login = async function (req, res) {
     if (Object.keys(credentials).length == 0) return res.status(400).send({ status: false, message: "Please fill data in body" })
 
     if (Object.keys(rest).length > 0) {
-      return res.status(400).send({ status: false, message: `You can not fill these:- ( ${Object.keys(rest)} )field` })
+      return res.status(400).send({
+        status: false,
+        message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
+      });
     }
 
-    if (validEmail(email) != true) return res.status(400).send({ status: false, message: `${validEmail(email)}` })
+    if (validEmail(email) != true)
+      return res
+        .status(400)
+        .send({ status: false, message: `${validEmail(email)}` });
 
-    if (validPW_4_Login(password) != true) return res.status(400).send({ status: false, message: `${validPW_4_Login(password)}` })
+    if (validPW_4_Login(password) != true)
+      return res
+        .status(400)
+        .send({ status: false, message: `${validPW_4_Login(password)}` });
 
     // --------- checking creadentials in DB -------------
     let user_in_DB = await userModel.findOne({ email });
-    if (!user_in_DB) return res.status(401).send({ status: false, message: "invalid credentials (email or the password is not correct)" })
+    if (!user_in_DB)
+      return res.status(401).send({
+        status: false,
+        message: "invalid credentials (email or the password is not correct)",
+      });
 
     bcrypt.compare(password, user_in_DB.password, function (err, result) {
       if (result !== true) {
-        return res.status(401).send({ success: false, message: 'passwords do not match' });
+        return res
+          .status(401)
+          .send({ success: false, message: "passwords do not match" });
       } else {
-
         // ---------- creating JWT Token ------------
 
         let token = jwt.sign(
           {
             userId: user_in_DB._id.toString(),
-            exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // After 24 hour it will expire 
-            iat: Math.floor(Date.now() / 1000)
-          }, "FunctionUp Group No 23");
+            exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // After 24 hour it will expire
+            iat: Math.floor(Date.now() / 1000),
+          },
+          "FunctionUp Group No 23"
+        );
 
         res.setHeader("x-api-key", token);
 
         let data = {
           token: token,
           userId: user_in_DB._id.toString(),
-        }
+        };
 
-        return res.status(200).send({ status: true, message: "Token has been successfully generated.", data: data });
+        return res.status(200).send({
+          status: true,
+          message: "Token has been successfully generated.",
+          data: data,
+        });
       }
-
     });
-
+  } catch (err) {
+    return res.status(500).send({ status: false, message: err.message });
   }
-  catch (err) {
-    return res.status(500).send({ status: false, message: err.message })
-  }
-}
+};
 
 const getUser = async function (req, res) {
   try {
-
-    const userId = req.params.userId
-
+    const userId = req.params.userId;
     if (userId === ":userId") {
-      return res.status(400).send({ status: false, message: "userId required" });
+      return res
+        .status(400)
+        .send({ status: false, message: "userId required" });
     }
-
     if (!ObjectId.isValid(userId)) {
       return res.status(400).send({ status: false, message: "invalid userId" });
     }
 
     if (req.decoded.userId === userId) {
-      const getUser = await userModel.find()
+      const getUser = await userModel.findById(userId);
       if (!getUser) {
-        return res.status(404).send({ status: false, message: "user not exist" });
+        return res
+          .status(404)
+          .send({ status: false, message: "user not exist" });
       }
-
       return res.status(200).send({ status: true, data: getUser });
+    }
+    return res.status(401).send({ status: false, message: "not auth" });
+  } catch (err) {
+    return res.status(500).send({ status: false, message: err.message });
+  }
+};
 
+//   PUT /user/:userId/profile
+
+const userUpdate = async function (req, res) {
+  let userid = req.params.userId;
+  let body = req.body;
+
+  if (!ObjectId.isValid(userid)) {
+    return res
+      .status(400)
+      .send({ status: false, msg: "Please Enter Valid userID" });
+  }
+
+  if (Object.keys(body).length == 0) {
+    return res
+      .status(400)
+      .send({ status: false, msg: "Please Enter Valid Details" });
+  }
+
+  let { fname, lname, email, profileImage, phone, password, address } = body;
+
+  if (fname) {
+    if (!isValidString(fname)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter The Valid fname " });
     }
   }
-  catch (err) {
-    return res.status(500).send({ status: false, message: err.message })
+
+  if (lname) {
+    if (!isValidString(lname)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter The Valid Lname " });
+    }
   }
-}
 
-module.exports = { createUser, login, getUser };
+  if (email) {
+    if (!isValidString(email)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "email must be in string format" });
+    }
+    if (!isValidEmail(email)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter The Valid email  " });
+    }
+  }
+  if (profileImage) {
+    if (!isValidString(profileImage)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "url must be in string format" });
+    }
+    if (!isValidUrl(profileImage)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter The Valid url" });
+    }
+  }
 
-// Allow an user to fetch details of their profile.
-// Make sure that userId in url param and in token is same
-// Response format
-// On success - Return HTTP status 200 and returns the user document. The response should be a JSON object like this
-// On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
-// {
+  if (phone) {
+    if (!isValidString(phone)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "phone number must be in string format" });
+    }
+    if (!isValidPhn(phone)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter The Valid Phone number  " });
+    }
+  }
+
+  if (password) {
+    if (!isValidString(password)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "password must be in string format" });
+    }
+    if (!isValidPass) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter The Valid password  " });
+    }
+    bcrypt.hash(password, 5, function (err, hash) {
+      // Store hash in your password DB.
+      if (err) {
+        return res.status(400).send({ status: false, msg: err.message });
+      }
+      body.password = hash;
+    });
+  }
+
+  if (address) {
+    let { shipping, billing } = address;
+    let arr = [shipping, billing];
+    for (field of arr) {
+      if (field) {
+        let { street, city, pincode } = field;
+        if (street) {
+          if (!isValidString(street)) {
+            return res
+              .status(400)
+              .send({ status: false, msg: "Please Enter The Valid Street  " });
+          }
+        }
+        if (city) {
+          if (!isValidString(city)) {
+            return res
+              .status(400)
+              .send({ status: false, msg: "Please Enter The Valid city " });
+          }
+        }
+        if (pincode) {
+          if (!isValidPincode(pincode)) {
+            return res
+              .status(400)
+              .send({ status: false, msg: "Please Enter The Valid pincode" });
+          }
+        }
+      }
+    }
+  }
+  console.log(body);
+  // let obj = { fname, lname, email, profileImage, phone, password, address };
+
+  let updation = await userModel.findByIdAndUpdate({ _id: userid }, body, {
+    new: true,
+  });
+
+  return res.status(200).send({ status: true, Data: updation });
+};
+
+module.exports = { createUser, login, getUser, userUpdate };
