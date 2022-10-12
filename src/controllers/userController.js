@@ -137,15 +137,13 @@ async function createUser(req, res) {
 
 const login = async function (req, res) {
   try {
-    const creadentials = req.body;
+    const credentials = req.body
 
-    let { email, password, ...rest } = creadentials;
+    let { email, password, ...rest } = credentials
 
     // ---------------- Applying Validation ------------
-    if (Object.keys(creadentials).length == 0)
-      return res
-        .status(400)
-        .send({ status: false, message: "Please fill data in body" });
+
+    if (Object.keys(credentials).length == 0) return res.status(400).send({ status: false, message: "Please fill data in body" })
 
     if (Object.keys(rest).length > 0) {
       return res.status(400).send({
@@ -179,6 +177,7 @@ const login = async function (req, res) {
           .send({ success: false, message: "passwords do not match" });
       } else {
         // ---------- creating JWT Token ------------
+
         let token = jwt.sign(
           {
             userId: user_in_DB._id.toString(),
@@ -319,16 +318,11 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, msg: "Please Enter The Valid password  " });
     }
-    bcrypt.hash(password, 5, function (err, hash) {
-      // Store hash in your password DB.
-      if (err) {
-        return res.status(400).send({ status: false, msg: err.message });
-      }
-      body.password = hash;
-    });
+    const encryptPassword = await bcrypt.hash(password, 5)
+    body.password = encryptPassword;
   }
 
-  if (address) {
+  if (address) {/////////////TA
     let { shipping, billing } = address;
     let arr = [shipping, billing];
     for (field of arr) {

@@ -15,7 +15,7 @@ mongoose
   .catch((err) => console.log(err.message));
 
 app.use("/", router);
-app.use("/*", (req, res) => res.status(404).send({status: false, message:"invalid url"}));
+app.use("/*", (req, res) => res.status(404).send({status: false, message:"invalid Path url"}));
 
 app.listen(3000, () => {
   console.log("Express app is running on: " + 3000);
