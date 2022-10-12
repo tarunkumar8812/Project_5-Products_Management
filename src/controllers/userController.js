@@ -318,16 +318,11 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, msg: "Please Enter The Valid password  " });
     }
-    bcrypt.hash(password, 5, function (err, hash) {
-      // Store hash in your password DB.
-      if (err) {
-        return res.status(400).send({ status: false, msg: err.message });
-      }
-      body.password = hash;
-    });
+    const encryptPassword = await bcrypt.hash(password, 5)
+    body.password = encryptPassword;
   }
 
-  if (address) {
+  if (address) {/////////////TA
     let { shipping, billing } = address;
     let arr = [shipping, billing];
     for (field of arr) {
