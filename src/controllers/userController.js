@@ -137,13 +137,16 @@ async function createUser(req, res) {
 
 const login = async function (req, res) {
   try {
-    const credentials = req.body
+    const credentials = req.body;
 
-    let { email, password, ...rest } = credentials
+    let { email, password, ...rest } = credentials;
 
     // ---------------- Applying Validation ------------
 
-    if (Object.keys(credentials).length == 0) return res.status(400).send({ status: false, message: "Please fill data in body" })
+    if (Object.keys(credentials).length == 0)
+      return res
+        .status(400)
+        .send({ status: false, message: "Please fill data in body" });
 
     if (Object.keys(rest).length > 0) {
       return res.status(400).send({
@@ -318,11 +321,13 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, msg: "Please Enter The Valid password  " });
     }
-    const encryptPassword = await bcrypt.hash(password, 5)
+    const encryptPassword = await bcrypt.hash(password, 5);
     body.password = encryptPassword;
   }
 
-  if (address) {/////////////TA
+  let obj = { fname, lname, email, profileImage, phone, password };
+
+  if (address) {
     let { shipping, billing } = address;
     let arr = [shipping, billing];
     for (field of arr) {
@@ -334,12 +339,24 @@ const userUpdate = async function (req, res) {
               .status(400)
               .send({ status: false, msg: "Please Enter The Valid Street  " });
           }
+          if (field == shipping) {
+            obj["address.shipping.street"] = field.street;
+          }
+          if (field == billing) {
+            obj["address.billing.street"] = field.street;
+          }
         }
         if (city) {
           if (!isValidString(city)) {
             return res
               .status(400)
               .send({ status: false, msg: "Please Enter The Valid city " });
+          }
+          if (field == shipping) {
+            obj["address.shipping.city"] = field.city;
+          }
+          if (field == billing) {
+            obj["address.billing.city"] = field.city;
           }
         }
         if (pincode) {
@@ -348,14 +365,30 @@ const userUpdate = async function (req, res) {
               .status(400)
               .send({ status: false, msg: "Please Enter The Valid pincode" });
           }
+          if (field == shipping) {
+            obj["address.shipping.pincode"] = field.pincode;
+          }
+          if (field == billing) {
+            obj["address.billing.pincode"] = field.pincode;
+          }
         }
       }
     }
   }
-  console.log(body);
-  // let obj = { fname, lname, email, profileImage, phone, password, address };
 
-  let updation = await userModel.findByIdAndUpdate({ _id: userid }, body, {
+  let unique = ["email", "phone"];
+  for (field of unique) {
+    let emp = {};
+    emp[field] = body[field];
+    let doc = await userModel.findOne(emp);
+    if (doc) {
+      return res
+        .status(409)
+        .send({ status: false, msg: `${field} is already exists` });
+    }
+  }
+
+  let updation = await userModel.findByIdAndUpdate({ _id: userid }, obj, {
     new: true,
   });
 
