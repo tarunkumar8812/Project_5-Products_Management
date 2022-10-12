@@ -32,6 +32,28 @@ function isValidPincode(value) {
   return pincodeRegex.test(value);
 }
 
+function isValidPrice(value) {
+  let priceRegex = /^[0-9]*$/;
+  return priceRegex.test(value);
+}
+
+function isValidCurencyId(value) {
+  
+  if(value!=="INR"){
+    return false
+  }
+  return true
+}
+
+
+function isValidCurencyFormat(value) {
+  
+  if(value.length==0 || value!=="₹"){
+    return false
+  }
+  return true
+}
+
 
 
 // ------------- validation of email -------------
@@ -70,5 +92,8 @@ module.exports = {
   isValidPass,
   isValidPincode,
   validEmail,
-  validPW_4_Login
+  validPW_4_Login,
+  isValidPrice,
+  isValidCurencyId,
+  isValidCurencyFormat
 };
