@@ -50,7 +50,7 @@ async function createUser(req, res) {
         }
         for (item of sb_Fields) {
           if (!Object.keys(data[field]).includes(item)) {
-            err.push(`${item} is required`);
+            err.push(`${item} is required`);       
             continue;
           }
           let obj = data[field];
