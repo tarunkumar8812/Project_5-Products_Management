@@ -1,6 +1,7 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { uploadFile } = require("../AWS/aws");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -29,7 +30,6 @@ async function createUser(req, res) {
       "fname",
       "lname",
       "email",
-      "profileImage",
       "phone",
       "password",
       "address",
@@ -77,9 +77,6 @@ async function createUser(req, res) {
         err.push(`${field} must be in string format`);
         continue;
       }
-      if (field === "profileImage") {
-        if (!isValidUrl(data[field])) err.push(`invalid ${field}`);
-      }
       if (field === "password") {
         if (!isValidPass(data[field]))
           err.push(
@@ -125,9 +122,24 @@ async function createUser(req, res) {
       });
     }
 
-    const createdData = await userModel.create(data);
+    //files form form data
+    let files = req.files;
 
-    return res.status(201).send({ status: true, data: createdData });
+    //checking file is there or not , as files comes in array
+    if (files && files.length > 0) {
+      let uploadedFileURL = await uploadFile(files[0]);
+
+      data.profileImage = uploadedFileURL;
+
+      //creating user
+      let createUserData = await userModel.create(data);
+      return res.status(201).send({
+        status: true,
+        data: createUserData,
+      });
+    } else {
+      return res.status(400).send({ message: "No file Found" });
+    }
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
@@ -209,6 +221,8 @@ const login = async function (req, res) {
   }
 };
 
+// --------------------------- getUser API --------------------------
+
 const getUser = async function (req, res) {
   try {
     const userId = req.params.userId;
@@ -236,11 +250,12 @@ const getUser = async function (req, res) {
   }
 };
 
-//   PUT /user/:userId/profile
+// --------------------------- updateUser API --------------------------
 
 const userUpdate = async function (req, res) {
   let userid = req.params.userId;
   let body = req.body;
+  let files = req.files;
 
   if (!ObjectId.isValid(userid)) {
     return res
@@ -248,13 +263,13 @@ const userUpdate = async function (req, res) {
       .send({ status: false, msg: "Please Enter Valid userID" });
   }
 
-  if (Object.keys(body).length == 0) {
+  if (Object.keys(body).length == 0 && files.length === 0) {
     return res
       .status(400)
       .send({ status: false, msg: "Please Enter Valid Details" });
   }
 
-  let { fname, lname, email, profileImage, phone, password, address } = body;
+  let { fname, lname, email, phone, password, address } = body;
 
   if (fname) {
     if (!isValidString(fname)) {
@@ -282,18 +297,6 @@ const userUpdate = async function (req, res) {
       return res
         .status(400)
         .send({ status: false, msg: "Please Enter The Valid email  " });
-    }
-  }
-  if (profileImage) {
-    if (!isValidString(profileImage)) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "url must be in string format" });
-    }
-    if (!isValidUrl(profileImage)) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "Please Enter The Valid url" });
     }
   }
 
@@ -325,7 +328,16 @@ const userUpdate = async function (req, res) {
     body.password = encryptPassword;
   }
 
-  let obj = { fname, lname, email, profileImage, phone, password };
+  let obj = { fname, lname, email, phone, password };
+
+  //checking file is there or not , as files comes in array
+  if (files && files.length > 0) {
+    if (files.length > 0) {
+      let uploadedFileURL = await uploadFile(files[0]);
+
+      obj.profileImage = uploadedFileURL;
+    }
+  }
 
   if (address) {
     let { shipping, billing } = address;

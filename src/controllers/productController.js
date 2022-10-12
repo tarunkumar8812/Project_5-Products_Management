@@ -1,4 +1,5 @@
 const productModel = require("../models/productModel");
+const { uploadFile } = require("../AWS/aws");
 const {
   isValidString,
   isValidUrl,
@@ -10,6 +11,7 @@ const {
 const createProduct = async function (req, res) {
   try {
     const data = req.body;
+    let files = req.files;
 
     console.log(data);
 
@@ -20,7 +22,6 @@ const createProduct = async function (req, res) {
       currencyId,
       currencyFormat,
       isFreeShipping,
-      productImage,
       style,
       availableSizes,
       installments,
@@ -45,7 +46,6 @@ const createProduct = async function (req, res) {
       "price",
       "currencyId",
       "currencyFormat",
-      "productImage",
       "availableSizes",
     ];
 
@@ -60,7 +60,7 @@ const createProduct = async function (req, res) {
       if (!isValidString(description)) {
         return res
           .status(400)
-          .send({ status: false, msg: "description must be in string " });
+          .send({ status: false, msg: "description must be in string" });
       }
     }
 
@@ -68,7 +68,7 @@ const createProduct = async function (req, res) {
       if (!isValidPrice(price)) {
         return res
           .status(400)
-          .send({ status: false, msg: "price must be in number " });
+          .send({ status: false, msg: "price must be in number" });
       }
     }
 
@@ -102,11 +102,6 @@ const createProduct = async function (req, res) {
         data.isFreeShipping = true;
       }
     }
-    if (productImage) {
-      if (!isValidUrl(productImage.trim())) {
-        return res.status(400).send({ status: false, msg: "invalid url" });
-      }
-    }
     if (style) {
       if (!isValidString(style.trim())) {
         return res
@@ -116,12 +111,16 @@ const createProduct = async function (req, res) {
     }
     if (availableSizes) {
       let arr = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-      if (!arr.includes(availableSizes)) {
-        return res.status(400).send({
-          status: false,
-          msg: `availableSizes must be in ${arr.join(", ")}`,
-        });
+      let sizes = availableSizes.split(",");
+      for (field of sizes) {
+        if (!arr.includes(field)) {
+          return res.status(400).send({
+            status: false,
+            msg: `availableSizes must be in ${arr.join(", ")}`,
+          });
+        }
       }
+      data.availableSizes = sizes;
     }
     if (installments) {
       if (!isValidPrice(installments.trim())) {
@@ -143,10 +142,19 @@ const createProduct = async function (req, res) {
           .send({ status: false, msg: "title is already exists" });
       }
     }
-    console.log(data);
-    const saveProduct = await productModel.create(data);
-    console.log(saveProduct);
-    return res.status(201).send({ status: true, data: saveProduct });
+    //checking file is there or not , as files comes in array
+    if (files && files.length > 0) {
+      let uploadedFileURL = await uploadFile(files[0]);
+
+      data.productImage = uploadedFileURL;
+
+      //creating product
+      let createProductData = await productModel.create(data);
+      return res.status(201).send({
+        status: true,
+        data: createProductData,
+      });
+    }
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
