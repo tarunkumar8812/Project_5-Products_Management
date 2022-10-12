@@ -141,14 +141,13 @@ async function createUser(req, res) {
 
 const login = async function (req, res) {
   try {
-    const creadentials = req.body
+    const credentials = req.body
 
-    
-
-    let { email, password, ...rest } = creadentials
+    let { email, password, ...rest } = credentials
 
     // ---------------- Applying Validation ------------
-    if (Object.keys(creadentials).length == 0) return res.status(400).send({ status: false, message: "Please fill data in body" })
+
+    if (Object.keys(credentials).length == 0) return res.status(400).send({ status: false, message: "Please fill data in body" })
 
     if (Object.keys(rest).length > 0) {
       return res.status(400).send({ status: false, message: `You can not fill these:- ( ${Object.keys(rest)} )field` })
@@ -168,6 +167,7 @@ const login = async function (req, res) {
       } else {
 
         // ---------- creating JWT Token ------------
+
         let token = jwt.sign(
           {
             userId: user_in_DB._id.toString(),
@@ -197,15 +197,17 @@ const getUser = async function (req, res) {
   try {
 
     const userId = req.params.userId
-    if(userId===":userId"){
-      return res.status(400).send({ status: false, message: "userId required" }); 
+
+    if (userId === ":userId") {
+      return res.status(400).send({ status: false, message: "userId required" });
     }
-if(!ObjectId.isValid(userId)){
-  return res.status(400).send({ status: false, message: "invalid userId" });
-}
+
+    if (!ObjectId.isValid(userId)) {
+      return res.status(400).send({ status: false, message: "invalid userId" });
+    }
 
     if (req.decoded.userId === userId) {
-      const getUser = await userModel.findById(userId)
+      const getUser = await userModel.find()
       if (!getUser) {
         return res.status(404).send({ status: false, message: "user not exist" });
       }
@@ -213,8 +215,6 @@ if(!ObjectId.isValid(userId)){
       return res.status(200).send({ status: true, data: getUser });
 
     }
-
-
   }
   catch (err) {
     return res.status(500).send({ status: false, message: err.message })
@@ -222,6 +222,7 @@ if(!ObjectId.isValid(userId)){
 }
 
 module.exports = { createUser, login, getUser };
+
 // Allow an user to fetch details of their profile.
 // Make sure that userId in url param and in token is same
 // Response format
