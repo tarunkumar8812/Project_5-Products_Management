@@ -1,5 +1,7 @@
 const productModel = require("../models/productModel");
 const { uploadFile } = require("../AWS/aws");
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 const {
   isValidString,
   isValidPrice,
@@ -245,4 +247,38 @@ async function getProduct(req, res) {
   }
 }
 
-module.exports = { createProduct, getProduct };
+//GET /products/:productId
+
+async function getProductByParam(req,res){
+
+  try{
+
+    
+    let productId  = req.params.productId
+    if (productId === ":productId") {
+      return res
+        .status(400)
+        .send({ status: false, message: "productId required" });
+    }
+    if (!ObjectId.isValid(productId)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter Valid productId" });
+    }
+    let check = await productModel.findById(productId)
+    if(!check){
+      return res
+        .status(404)
+        .send({ status: false, msg: "product not found" });
+    }
+    return res.status(200).send({ status: true, data: check });
+
+  }catch(err){
+    return res.status(500).send({ status: false, message: err.message });
+  }
+}
+
+
+
+
+module.exports = { createProduct, getProduct ,getProductByParam};
