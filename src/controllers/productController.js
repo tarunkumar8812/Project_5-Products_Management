@@ -2,7 +2,6 @@ const productModel = require("../models/productModel");
 const { uploadFile } = require("../AWS/aws");
 const {
   isValidString,
-  isValidUrl,
   isValidPrice,
   isValidCurencyId,
   isValidCurencyFormat,
@@ -76,20 +75,20 @@ const createProduct = async function (req, res) {
       if (!isValidCurencyId(currencyId)) {
         return res
           .status(400)
-          .send({ status: false, msg: "currencyId must be in INR " });
+          .send({ status: false, msg: "currencyId must be in INR" });
       }
     }
 
     if (currencyFormat == "") {
       return res
         .status(400)
-        .send({ status: false, msg: "CurencyFormat should not be empty " });
+        .send({ status: false, msg: "CurencyFormat should not be empty" });
     }
     if (currencyFormat) {
       if (!isValidCurencyFormat(currencyFormat.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "CurencyFormat must be in ₹ " });
+          .send({ status: false, msg: "CurencyFormat must be in ₹" });
       }
     }
     if (isFreeShipping) {
@@ -106,7 +105,7 @@ const createProduct = async function (req, res) {
       if (!isValidString(style.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "style must be in string " });
+          .send({ status: false, msg: "style must be in string" });
       }
     }
     if (availableSizes) {
@@ -154,10 +153,96 @@ const createProduct = async function (req, res) {
         status: true,
         data: createProductData,
       });
+    } else {
+      return res.status(400).send({ message: "No file Found" });
     }
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
 };
 
-module.exports = { createProduct };
+
+//=============================getProductsByQuerys=====================//
+async function getProduct(req, res) {
+  try {
+    let data = req.query;
+
+    let { size, name, priceGreaterThan, priceLessThan, priceSort, ...rest } =
+      data;
+
+    let obj = {};
+
+    if (Object.keys(rest).length > 0) {
+      return res.status(400).send({
+        status: false,
+        message: `You can not use these :- ( ${Object.keys(rest)} ) filters`,
+      });
+    }
+
+    //checking size
+    if (size) {
+      if (!isValidString(size.trim())) {
+        return res
+          .status(400)
+          .send({ status: false, msg: "size must be in string" });
+      }
+      let arr = size.split(",");
+      obj.availableSizes = { $in: arr };
+    }
+
+    //checking name
+    if (name) {
+      if (!isValidString(name.trim())) {
+        return res
+          .status(400)
+          .send({ status: false, msg: "name must be in string" });
+      }
+      obj.title = name;
+    }
+
+    //checking priceGreaterThan
+    if (priceGreaterThan) {
+      if (!isValidPrice(priceGreaterThan.trim())) {
+        return res
+          .status(400)
+          .send({ status: false, msg: "priceGreaterThan must be in number" });
+      }
+      obj.price = { $gte: priceGreaterThan };
+    }
+
+    //checking priceLessThan
+    if (priceLessThan) {
+      if (!isValidPrice(priceLessThan.trim())) {
+        return res
+          .status(400)
+          .send({ status: false, msg: "priceLessThan must be in number" });
+      }
+      obj.price = { $lte: priceLessThan };
+    }
+
+    //checking priceSort
+    if (priceSort) {
+      if (!(priceSort !== "-1" || priceSort !== "1")) {
+        return res
+          .status(400)
+          .send({ status: false, msg: "priceSort must be in 1/-1" });
+      }
+      let getProduct = await productModel.find(obj).sort({ price: +priceSort });
+      return res.status(200).send({
+        status: true,
+        data: getProduct,
+      });
+    }
+
+    //to find products
+    let getProduct = await productModel.find(obj);
+    return res.status(200).send({
+      status: true,
+      data: getProduct,
+    });
+  } catch (err) {
+    return res.status(500).send({ status: false, message: err.message });
+  }
+}
+
+module.exports = { createProduct, getProduct };

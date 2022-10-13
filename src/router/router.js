@@ -8,7 +8,10 @@ const {
   userUpdate,
 } = require("../controllers/userController");
 
-const {createProduct} = require("../controllers/productController")
+const {
+  createProduct,
+  getProduct,
+} = require("../controllers/productController");
 
 const { authentication, authorization } = require("../middleware/auth");
 
@@ -18,5 +21,6 @@ router.get("/user/:userId/profile", authentication, getUser);
 router.put("/user/:userId/profile", authentication, authorization, userUpdate);
 
 router.post("/products", createProduct);
+router.get("/products", getProduct);
 
 module.exports = router;
