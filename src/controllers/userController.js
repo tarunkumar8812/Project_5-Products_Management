@@ -8,7 +8,6 @@ const ObjectId = mongoose.Types.ObjectId;
 const {
   isValidString,
   isValidEmail,
-  isValidUrl,
   isValidPhn,
   isValidPass,
   isValidPincode,
