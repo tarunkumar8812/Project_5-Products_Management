@@ -163,7 +163,6 @@ const createProduct = async function (req, res) {
   }
 };
 
-
 //=============================getProductsByQuerys=====================//
 async function getProduct(req, res) {
   try {
@@ -250,11 +249,8 @@ async function getProduct(req, res) {
 //GET /products/:productId
 
 async function getProductByParam(req, res) {
-
   try {
-
-
-    let productId = req.params.productId
+    let productId = req.params.productId;
     if (productId === ":productId") {
       return res
         .status(400)
@@ -265,14 +261,11 @@ async function getProductByParam(req, res) {
         .status(400)
         .send({ status: false, msg: "Please Enter Valid productId" });
     }
-    let check = await productModel.findById(productId)
+    let check = await productModel.findById(productId);
     if (!check) {
-      return res
-        .status(404)
-        .send({ status: false, msg: "product not found" });
+      return res.status(404).send({ status: false, msg: "product not found" });
     }
     return res.status(200).send({ status: true, data: check });
-
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
@@ -280,18 +273,25 @@ async function getProductByParam(req, res) {
 
 //-----  updateProductByParam ------------
 
-
 async function updateProductByParam(req, res) {
-
   try {
-    let productId = req.params.productId
-    let data = req.body
-    let { title, description, price, isFreeShipping, productImage, style, availableSizes, installments, ...rest } = data
+    let productId = req.params.productId;
+    let data = req.body;
+    // console.log(data);
+    let {
+      title,
+      description,
+      price,
+      isFreeShipping,
+      style,
+      productImage,
+      availableSizes,
+      installments,
+      ...rest
+    } = data;
     let files = req.files;
 
     // console.log(files);
-
-
 
     // -------------------- checking productId in params ---------
     if (productId === ":productId") {
@@ -306,6 +306,7 @@ async function updateProductByParam(req, res) {
     }
 
     // -------------------- checking atleast one data ---------
+    // console.log(files);
 
     if (Object.keys(data).length == 0 && files === undefined) {
       return res
@@ -320,8 +321,6 @@ async function updateProductByParam(req, res) {
         message: `You can not use these :- ( ${Object.keys(rest)} ) filters`,
       });
     }
-
-
 
     if (description) {
       if (!isValidString(description)) {
@@ -339,7 +338,6 @@ async function updateProductByParam(req, res) {
       }
     }
 
-
     if (isFreeShipping) {
       if (!["true", "false"].includes(isFreeShipping.trim())) {
         return res
@@ -350,7 +348,6 @@ async function updateProductByParam(req, res) {
         data.isFreeShipping = true;
       }
       data.isFreeShipping = false;
-
     }
 
     if (style) {
@@ -360,7 +357,6 @@ async function updateProductByParam(req, res) {
           .send({ status: false, msg: "style must be in string" });
       }
     }
-
 
     if (availableSizes) {
       let arr = ["S", "XS", "M", "X", "L", "XXL", "XL"];
@@ -376,7 +372,6 @@ async function updateProductByParam(req, res) {
       data.availableSizes = sizes;
     }
 
-
     if (installments) {
       if (!isValidPrice(installments.trim())) {
         return res
@@ -386,30 +381,33 @@ async function updateProductByParam(req, res) {
     }
 
 
+    if (productImage === "") {
+      return res
+        .status(400)
+        .send({ status: false, msg: "required image file in productImage" });
+    }
+
     if (title) {
       if (!isValidString(title)) {
         return res
           .status(400)
           .send({ status: false, msg: "Please Enter The Valid title " });
       }
-      let data = await productModel.findOne({ title });
-      if (data) {
+      let checkTitle = await productModel.findOne({ title });
+      if (checkTitle) {
         return res
           .status(409)
           .send({ status: false, msg: "title is already exists" });
       }
     }
 
-
-
-
     // ----------------------- checking in DB ---------------
-    let check = await productModel.findByIdAndUpdate(productId, data, { new: true })
-    if (check) {
-      return res
-        .status(404)
-        .send({ status: false, data: check });
+    let check = await productModel.findById(productId);
+    if (!check) {
+      return res.status(404).send({ status: false, data: check });
     }
+
+    console.log(files);
 
     //checking file is there or not , as files comes in array
     if (files && files.length > 0) {
@@ -418,24 +416,38 @@ async function updateProductByParam(req, res) {
       data.productImage = uploadedFileURL;
 
       //creating product
-      let createProductData = await productModel.create(data);
-      return res.status(201).send({
+      let updatedProductData = await productModel.findByIdAndUpdate(
+        productId,
+        data,
+        {
+          new: true,
+        }
+      );
+      return res.status(200).send({
         status: true,
-        data: createProductData,
+        data: updatedProductData,
+      });
+    } else {
+      let updatedProductData = await productModel.findByIdAndUpdate(
+        productId,
+        data,
+        {
+          new: true,
+        }
+      );
+      return res.status(200).send({
+        status: true,
+        data: updatedProductData,
       });
     }
-    // } else {
-    //   return res.status(400).send({ message: "please provide image to update" });
-    // }
-
-    // return res.status(200).send({ status: true, data: check });
-
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
 }
 
-
-
-
-module.exports = { createProduct, getProduct, getProductByParam, updateProductByParam };
+module.exports = {
+  createProduct,
+  getProduct,
+  getProductByParam,
+  updateProductByParam,
+};
