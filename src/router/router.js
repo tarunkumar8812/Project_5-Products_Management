@@ -11,7 +11,8 @@ const {
 const {
   createProduct,
   getProduct,
-  getProductByParam
+  getProductByParam,
+  updateProductByParam
 } = require("../controllers/productController");
 
 const { authentication, authorization } = require("../middleware/auth");
@@ -24,5 +25,6 @@ router.put("/user/:userId/profile", authentication, authorization, userUpdate);
 router.post("/products", createProduct);
 router.get("/products", getProduct);
 router.get("/products/:productId",getProductByParam)
+router.put("/products/:productId",updateProductByParam)
 
 module.exports = router;
