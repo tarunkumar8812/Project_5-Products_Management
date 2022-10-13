@@ -445,9 +445,45 @@ async function updateProductByParam(req, res) {
   }
 }
 
+// ------------------------------------deteleteByparams--------------------------------------------
+
+async function deleteProduct(req, res){
+    try{
+
+        const productId = req.params.productId
+
+        if (productId === ":productId") {
+            return res
+              .status(400)
+              .send({ status: false, message: "productId required" });
+          }
+          if (!ObjectId.isValid(productId)) {
+            return res
+              .status(400)
+              .send({ status: false, msg: "Please Enter Valid productId" });
+          }
+
+        const deleteProduct = await productModel.findOneAndUpdate({_id:productId, isDeleted:false},
+            {
+                $set:{isDeleted:true, deletedAt:Date.now()} 
+            }
+             )
+             if(!deleteProduct){
+                return res.status(404).send({status:false, msg:"product not found"})
+             }
+
+             return res.status(200).send({status: true, msg: "deleted succefully"})
+
+    }
+    catch (err) {
+        return res.status(500).send({ status: false, message: err.message });
+      }
+}
+
 module.exports = {
   createProduct,
   getProduct,
   getProductByParam,
   updateProductByParam,
+  deleteProduct
 };
