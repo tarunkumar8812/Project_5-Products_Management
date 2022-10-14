@@ -259,7 +259,7 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "priceGreaterThan must be in number" });
       }
-      // obj.price = { $gte: priceGreaterThan };
+      obj.price = { $gte: priceGreaterThan };
     }
 
     //checking priceLessThan
@@ -269,7 +269,7 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "priceLessThan must be in number" });
       }
-      // obj.price = { $lte: priceLessThan };
+      obj.price = { $lte: priceLessThan };
     }
 
     obj.isDeleted = false;
@@ -281,53 +281,8 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "priceSort must be in 1/-1" });
       }
-      let getProduct = await productModel.aggregate([
-        {
-          $match: obj,
-        },
-        { $sort: { price: +priceSort } },
-      ]);
-
-      if (priceGreaterThan && priceLessThan) {
-        let data = getProduct
-          .filter((x) => x.price >= priceGreaterThan)
-          .filter((x) => x.price <= priceLessThan);
-        if (data.length === 0) {
-          return res
-            .status(404)
-            .send({ status: false, msg: "product not found" });
-        }
-        return res.status(200).send({
-          status: true,
-          data: data,
-        });
-      }
-
-      if (priceGreaterThan) {
-        let data = getProduct.filter((x) => x.price >= priceGreaterThan);
-        if (data.length === 0) {
-          return res
-            .status(404)
-            .send({ status: false, msg: "product not found" });
-        }
-        return res.status(200).send({
-          status: true,
-          data: data,
-        });
-      }
-
-      if (priceLessThan) {
-        let data = getProduct.filter((x) => x.price <= priceLessThan);
-        if (data.length === 0) {
-          return res
-            .status(404)
-            .send({ status: false, msg: "product not found" });
-        }
-        return res.status(200).send({
-          status: true,
-          data: data,
-        });
-      }
+      let getProduct = await productModel.find(obj).sort({ price: +priceSort });
+      
       if (getProduct.length === 0) {
         return res
           .status(404)
@@ -342,52 +297,9 @@ async function getProduct(req, res) {
     // console.log(obj);
 
     //to find products
-    let getProduct = await productModel.aggregate([
-      {
-        $match: obj,
-      },
-    ]);
+    let getProduct = await productModel.find(obj);
     if (getProduct.length === 0) {
-      return res.status(404).send({ status: false, msg: "product not found" });
-    }
-    if (priceGreaterThan && priceLessThan) {
-      let data = getProduct
-        .filter((x) => x.price >= priceGreaterThan)
-        .filter((x) => x.price <= priceLessThan);
-      if (data.length === 0) {
-        return res
-          .status(404)
-          .send({ status: false, msg: "product not found" });
-      }
-      return res.status(200).send({
-        status: true,
-        data: data,
-      });
-    }
-
-    if (priceGreaterThan) {
-      let data = getProduct.filter((x) => x.price >= priceGreaterThan);
-      if (data.length === 0) {
-        return res
-          .status(404)
-          .send({ status: false, msg: "product not found" });
-      }
-      return res.status(200).send({
-        status: true,
-        data: data,
-      });
-    }
-    if (priceLessThan) {
-      let data = getProduct.filter((x) => x.price <= priceLessThan);
-      if (data.length === 0) {
-        return res
-          .status(404)
-          .send({ status: false, msg: "product not found" });
-      }
-      return res.status(200).send({
-        status: true,
-        data: data,
-      });
+      return res.status(404).send({ status: false, msg: "products not found" });
     }
     return res.status(200).send({
       status: true,
