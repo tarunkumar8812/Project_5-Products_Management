@@ -14,7 +14,7 @@ const createProduct = async function (req, res) {
     const data = req.body;
     let files = req.files;
 
-    // console.log(data);
+    // console.log(files);
 
     const {
       title,
@@ -48,11 +48,15 @@ const createProduct = async function (req, res) {
       "price",
       "currencyId",
       "currencyFormat",
+      "productImage",
       "availableSizes",
     ];
 
     for (field of requiredFields) {
       if (!Object.keys(data).includes(field)) {
+        if (field === "productImage" && files.length > 0) {
+          continue;
+        }
         return res
           .status(400)
           .send({ status: false, msg: `${field} is required` });
@@ -65,30 +69,36 @@ const createProduct = async function (req, res) {
       "price",
       "currencyId",
       "currencyFormat",
+      "isFreeShipping",
+      "productImage",
+      "style",
       "availableSizes",
+      "installments",
     ];
 
     for (field of arr) {
-      if (data[field].trim() === "") {
-        return res
-          .status(400)
-          .send({ status: false, msg: `required value of the ${field}` });
+      if (Object.keys(data).includes(field)) {
+        if (data[field].trim() === "") {
+          return res
+            .status(400)
+            .send({ status: false, msg: `required value of the ${field}` });
+        }
       }
     }
 
-    if (!isValidString(description)) {
+    if (!isValidString(description.trim())) {
       return res
         .status(400)
         .send({ status: false, msg: "description must be in string" });
     }
 
-    if (!isValidPrice(price)) {
+    if (!isValidPrice(price.trim())) {
       return res
         .status(400)
         .send({ status: false, msg: "price must be in number/decimal" });
     }
 
-    if (!isValidCurencyId(currencyId)) {
+    if (!isValidCurencyId(currencyId.trim())) {
       return res
         .status(400)
         .send({ status: false, msg: "currencyId must be in INR" });
@@ -109,7 +119,9 @@ const createProduct = async function (req, res) {
       if (isFreeShipping.trim() === "true") {
         data.isFreeShipping = true;
       }
+      data.isFreeShipping = false;
     }
+
     if (style) {
       if (!isValidString(style.trim())) {
         return res
@@ -143,12 +155,6 @@ const createProduct = async function (req, res) {
       }
     }
 
-    if (productImage === "") {
-      return res
-        .status(400)
-        .send({ status: false, msg: `required productImage File` });
-    }
-
     if (!isValidString(title)) {
       return res
         .status(400)
@@ -174,7 +180,7 @@ const createProduct = async function (req, res) {
         data: createProductData,
       });
     } else {
-      return res.status(400).send({ message: "required productImage" });
+      return res.status(400).send({ message: "required productImage file" });
     }
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
@@ -198,10 +204,12 @@ async function getProduct(req, res) {
     ];
 
     for (field of arr) {
-      if (data[field].trim() === "") {
-        return res
-          .status(400)
-          .send({ status: false, msg: `required value of the ${field}` });
+      if (Object.keys(data).includes(field)) {
+        if (data[field].trim() === "") {
+          return res
+            .status(400)
+            .send({ status: false, msg: `required value of the ${field}` });
+        }
       }
     }
 
@@ -221,8 +229,17 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "size must be in string" });
       }
-      let arr = size.split(",");
-      obj.availableSizes = { $in: arr };
+      let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
+      let sizes = size.split(",");
+      for (field of sizes) {
+        if (!listOfSizes.includes(field)) {
+          return res.status(400).send({
+            status: false,
+            msg: `Sizes must be in ${listOfSizes.join(", ")}`,
+          });
+        }
+      }
+      obj.availableSizes = { $in: sizes };
     }
 
     //checking name
@@ -232,7 +249,7 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "name must be in string" });
       }
-      obj.title = { $regex: `${name}` }; 
+      obj.title = { $regex: `${name}` };
     }
 
     //checking priceGreaterThan
@@ -242,7 +259,7 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "priceGreaterThan must be in number" });
       }
-      obj.price = { $gte: priceGreaterThan };
+      // obj.price = { $gte: priceGreaterThan };
     }
 
     //checking priceLessThan
@@ -252,7 +269,7 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "priceLessThan must be in number" });
       }
-      obj.price = { $lte: priceLessThan };
+      // obj.price = { $lte: priceLessThan };
     }
 
     obj.isDeleted = false;
@@ -264,11 +281,53 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "priceSort must be in 1/-1" });
       }
-      let getProduct = await productModel..aggregate([
-      {
-        $match: obj,
-      },
-    ]).sort({ price: +priceSort });
+      let getProduct = await productModel.aggregate([
+        {
+          $match: obj,
+        },
+        { $sort: { price: +priceSort } },
+      ]);
+
+      if (priceGreaterThan && priceLessThan) {
+        let data = getProduct
+          .filter((x) => x.price >= priceGreaterThan)
+          .filter((x) => x.price <= priceLessThan);
+        if (data.length === 0) {
+          return res
+            .status(404)
+            .send({ status: false, msg: "product not found" });
+        }
+        return res.status(200).send({
+          status: true,
+          data: data,
+        });
+      }
+
+      if (priceGreaterThan) {
+        let data = getProduct.filter((x) => x.price >= priceGreaterThan);
+        if (data.length === 0) {
+          return res
+            .status(404)
+            .send({ status: false, msg: "product not found" });
+        }
+        return res.status(200).send({
+          status: true,
+          data: data,
+        });
+      }
+
+      if (priceLessThan) {
+        let data = getProduct.filter((x) => x.price <= priceLessThan);
+        if (data.length === 0) {
+          return res
+            .status(404)
+            .send({ status: false, msg: "product not found" });
+        }
+        return res.status(200).send({
+          status: true,
+          data: data,
+        });
+      }
       if (getProduct.length === 0) {
         return res
           .status(404)
@@ -280,6 +339,8 @@ async function getProduct(req, res) {
       });
     }
 
+    // console.log(obj);
+
     //to find products
     let getProduct = await productModel.aggregate([
       {
@@ -288,6 +349,45 @@ async function getProduct(req, res) {
     ]);
     if (getProduct.length === 0) {
       return res.status(404).send({ status: false, msg: "product not found" });
+    }
+    if (priceGreaterThan && priceLessThan) {
+      let data = getProduct
+        .filter((x) => x.price >= priceGreaterThan)
+        .filter((x) => x.price <= priceLessThan);
+      if (data.length === 0) {
+        return res
+          .status(404)
+          .send({ status: false, msg: "product not found" });
+      }
+      return res.status(200).send({
+        status: true,
+        data: data,
+      });
+    }
+
+    if (priceGreaterThan) {
+      let data = getProduct.filter((x) => x.price >= priceGreaterThan);
+      if (data.length === 0) {
+        return res
+          .status(404)
+          .send({ status: false, msg: "product not found" });
+      }
+      return res.status(200).send({
+        status: true,
+        data: data,
+      });
+    }
+    if (priceLessThan) {
+      let data = getProduct.filter((x) => x.price <= priceLessThan);
+      if (data.length === 0) {
+        return res
+          .status(404)
+          .send({ status: false, msg: "product not found" });
+      }
+      return res.status(200).send({
+        status: true,
+        data: data,
+      });
     }
     return res.status(200).send({
       status: true,
