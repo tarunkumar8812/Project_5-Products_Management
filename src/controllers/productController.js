@@ -334,7 +334,10 @@ async function getProductByParam(req, res) {
         .status(400)
         .send({ status: false, msg: "Please Enter Valid productId" });
     }
-    let check = await productModel.findOne({ productId, isDeleted: false });
+    let check = await productModel.findOne({
+      _id: productId,
+      isDeleted: false,
+    });
     if (!check) {
       return res.status(404).send({ status: false, msg: "product not found" });
     }
@@ -497,7 +500,7 @@ async function updateProductByParam(req, res) {
       }
     }
 
-    //checking in DB 
+    //checking in DB
     let check = await productModel.findOne({
       _id: productId,
       isDeleted: false,
@@ -559,8 +562,7 @@ async function updateProductByParam(req, res) {
   }
 }
 
-// ------------------------------------deteleteByparams--------------------------------------------
-
+//================deteleteByparams===================//
 async function deleteProduct(req, res) {
   try {
     const productId = req.params.productId;
