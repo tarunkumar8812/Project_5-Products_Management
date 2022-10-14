@@ -14,7 +14,7 @@ const createProduct = async function (req, res) {
     const data = req.body;
     let files = req.files;
 
-    console.log(data);
+    // console.log(data);
 
     const {
       title,
@@ -23,6 +23,7 @@ const createProduct = async function (req, res) {
       currencyId,
       currencyFormat,
       isFreeShipping,
+      productImage,
       style,
       availableSizes,
       installments,
@@ -39,6 +40,27 @@ const createProduct = async function (req, res) {
         status: false,
         message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
       });
+    }
+
+    const arr = [
+      "title",
+      "description",
+      "price",
+      "currencyId",
+      "currencyFormat",
+      "isFreeShipping",
+      "productImage",
+      "style",
+      "availableSizes",
+      "installments",
+    ];
+
+    for (field of arr) {
+      if (data[field].trim() === "") {
+        return res
+          .status(400)
+          .send({ status: false, msg: `required value of the ${field}` });
+      }
     }
 
     const requiredFields = [
@@ -156,7 +178,7 @@ const createProduct = async function (req, res) {
         data: createProductData,
       });
     } else {
-      return res.status(400).send({ message: "No file Found" });
+      return res.status(400).send({ message: "required productImage" });
     }
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
@@ -170,6 +192,22 @@ async function getProduct(req, res) {
 
     let { size, name, priceGreaterThan, priceLessThan, priceSort, ...rest } =
       data;
+
+    const arr = [
+      "size",
+      "name",
+      "priceGreaterThan",
+      "priceLessThan",
+      "priceSort",
+    ];
+
+    for (field of arr) {
+      if (data[field].trim() === "") {
+        return res
+          .status(400)
+          .send({ status: false, msg: `required value of the ${field}` });
+      }
+    }
 
     let obj = {};
 
@@ -221,6 +259,8 @@ async function getProduct(req, res) {
       obj.price = { $lte: priceLessThan };
     }
 
+    obj.isDeleted = false;
+
     //checking priceSort
     if (priceSort) {
       if (!(priceSort !== "-1" || priceSort !== "1")) {
@@ -229,6 +269,11 @@ async function getProduct(req, res) {
           .send({ status: false, msg: "priceSort must be in 1/-1" });
       }
       let getProduct = await productModel.find(obj).sort({ price: +priceSort });
+      if (getProduct.length===0) {
+        return res
+          .status(404)
+          .send({ status: false, msg: "products not found" });
+      }
       return res.status(200).send({
         status: true,
         data: getProduct,
@@ -237,6 +282,9 @@ async function getProduct(req, res) {
 
     //to find products
     let getProduct = await productModel.find(obj);
+    if (getProduct.length===0) {
+      return res.status(404).send({ status: false, msg: "product not found" });
+    }
     return res.status(200).send({
       status: true,
       data: getProduct,
@@ -246,8 +294,7 @@ async function getProduct(req, res) {
   }
 }
 
-//GET /products/:productId
-
+//=============================getProductByParam=====================//
 async function getProductByParam(req, res) {
   try {
     let productId = req.params.productId;
@@ -261,7 +308,7 @@ async function getProductByParam(req, res) {
         .status(400)
         .send({ status: false, msg: "Please Enter Valid productId" });
     }
-    let check = await productModel.findById(productId);
+    let check = await productModel.findOne({ productId, isDeleted: false });
     if (!check) {
       return res.status(404).send({ status: false, msg: "product not found" });
     }
@@ -322,6 +369,27 @@ async function updateProductByParam(req, res) {
       });
     }
 
+    const arr = [
+      "title",
+      "description",
+      "price",
+      "currencyId",
+      "currencyFormat",
+      "isFreeShipping",
+      "productImage",
+      "style",
+      "availableSizes",
+      "installments",
+    ];
+
+    for (field of arr) {
+      if (data[field].trim() === "") {
+        return res
+          .status(400)
+          .send({ status: false, msg: `required value of the ${field}` });
+      }
+    }
+
     if (description) {
       if (!isValidString(description)) {
         return res
@@ -380,13 +448,6 @@ async function updateProductByParam(req, res) {
       }
     }
 
-
-    if (productImage === "") {
-      return res
-        .status(400)
-        .send({ status: false, msg: "required image file in productImage" });
-    }
-
     if (title) {
       if (!isValidString(title)) {
         return res
@@ -402,12 +463,14 @@ async function updateProductByParam(req, res) {
     }
 
     // ----------------------- checking in DB ---------------
-    let check = await productModel.findById(productId);
+    let check = await productModel.findOne({ productId, isDeleted: false });
     if (!check) {
-      return res.status(404).send({ status: false, data: check });
+      return res
+        .status(404)
+        .send({ status: false, msg: "product not founded" });
     }
 
-    console.log(files);
+    // console.log(files);
 
     //checking file is there or not , as files comes in array
     if (files && files.length > 0) {
@@ -447,37 +510,35 @@ async function updateProductByParam(req, res) {
 
 // ------------------------------------deteleteByparams--------------------------------------------
 
-async function deleteProduct(req, res){
-    try{
+async function deleteProduct(req, res) {
+  try {
+    const productId = req.params.productId;
 
-        const productId = req.params.productId
-
-        if (productId === ":productId") {
-            return res
-              .status(400)
-              .send({ status: false, message: "productId required" });
-          }
-          if (!ObjectId.isValid(productId)) {
-            return res
-              .status(400)
-              .send({ status: false, msg: "Please Enter Valid productId" });
-          }
-
-        const deleteProduct = await productModel.findOneAndUpdate({_id:productId, isDeleted:false},
-            {
-                $set:{isDeleted:true, deletedAt:Date.now()} 
-            }
-             )
-             if(!deleteProduct){
-                return res.status(404).send({status:false, msg:"product not found"})
-             }
-
-             return res.status(200).send({status: true, msg: "deleted succefully"})
-
+    if (productId === ":productId") {
+      return res
+        .status(400)
+        .send({ status: false, message: "productId required" });
     }
-    catch (err) {
-        return res.status(500).send({ status: false, message: err.message });
+    if (!ObjectId.isValid(productId)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter Valid productId" });
+    }
+
+    const deleteProduct = await productModel.findOneAndUpdate(
+      { _id: productId, isDeleted: false },
+      {
+        $set: { isDeleted: true, deletedAt: Date.now() },
       }
+    );
+    if (!deleteProduct) {
+      return res.status(404).send({ status: false, msg: "product not found" });
+    }
+
+    return res.status(200).send({ status: true, msg: "deleted succefully" });
+  } catch (err) {
+    return res.status(500).send({ status: false, message: err.message });
+  }
 }
 
 module.exports = {
@@ -485,5 +546,5 @@ module.exports = {
   getProduct,
   getProductByParam,
   updateProductByParam,
-  deleteProduct
+  deleteProduct,
 };
