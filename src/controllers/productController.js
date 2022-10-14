@@ -14,7 +14,7 @@ const createProduct = async function (req, res) {
     const data = req.body;
     let files = req.files;
 
-    // console.log(files);
+    console.log(files);
 
     const {
       title,
@@ -48,15 +48,11 @@ const createProduct = async function (req, res) {
       "price",
       "currencyId",
       "currencyFormat",
-      "productImage",
       "availableSizes",
     ];
 
     for (field of requiredFields) {
       if (!Object.keys(data).includes(field)) {
-        if (field === "productImage" && files.length > 0) {
-          continue;
-        }
         return res
           .status(400)
           .send({ status: false, msg: `${field} is required` });
@@ -70,7 +66,6 @@ const createProduct = async function (req, res) {
       "currencyId",
       "currencyFormat",
       "isFreeShipping",
-      "productImage",
       "style",
       "availableSizes",
       "installments",
@@ -167,21 +162,36 @@ const createProduct = async function (req, res) {
         .send({ status: false, msg: "title is already exists" });
     }
 
-    //checking file is there or not , as files comes in array
-    if (files && files.length > 0) {
-      let uploadedFileURL = await uploadFile(files[0]);
-
-      data.productImage = uploadedFileURL;
-
-      //creating product
-      let createProductData = await productModel.create(data);
-      return res.status(201).send({
-        status: true,
-        data: createProductData,
-      });
-    } else {
-      return res.status(400).send({ message: "required productImage file" });
+    if (files.length === 0) {
+      return res
+        .status(400)
+        .send({ status: false, message: "required productImage file" });
     }
+
+    if (
+      !(
+        files[0].mimetype == "image/png" ||
+        files[0].mimetype == "image/jpg" ||
+        files[0].mimetype == "image/jpeg"
+      )
+    ) {
+      return res.status(400).send({
+        status: false,
+        message: "Only .png, .jpg and .jpeg format allowed!",
+      });
+    }
+
+    //uploading productImage file in AWS
+    let uploadedFileURL = await uploadFile(files[0]);
+
+    data.productImage = uploadedFileURL;
+
+    //creating product
+    let createProductData = await productModel.create(data);
+    return res.status(201).send({
+      status: true,
+      data: createProductData,
+    });
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
@@ -282,7 +292,7 @@ async function getProduct(req, res) {
           .send({ status: false, msg: "priceSort must be in 1/-1" });
       }
       let getProduct = await productModel.find(obj).sort({ price: +priceSort });
-      
+
       if (getProduct.length === 0) {
         return res
           .status(404)
@@ -334,8 +344,7 @@ async function getProductByParam(req, res) {
   }
 }
 
-//-----  updateProductByParam ------------
-
+//===============================updateProductByParam==========================//
 async function updateProductByParam(req, res) {
   try {
     let productId = req.params.productId;
@@ -352,11 +361,12 @@ async function updateProductByParam(req, res) {
       installments,
       ...rest
     } = data;
+
     let files = req.files;
 
     // console.log(files);
 
-    // -------------------- checking productId in params ---------
+    //checking productId in params
     if (productId === ":productId") {
       return res
         .status(400)
@@ -368,16 +378,15 @@ async function updateProductByParam(req, res) {
         .send({ status: false, msg: "Please Enter Valid productId" });
     }
 
-    // -------------------- checking atleast one data ---------
-    // console.log(files);
-
+    //checking atleast one data
     if (Object.keys(data).length == 0 && files === undefined) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "Please Enter Valid Details" });
+      return res.status(400).send({
+        status: false,
+        msg: "for updation atleast one key value pair is required",
+      });
     }
 
-    // -------------------- checking other than required fields ---------
+    //checking other than required fields
     if (Object.keys(rest).length > 0) {
       return res.status(400).send({
         status: false,
@@ -399,10 +408,20 @@ async function updateProductByParam(req, res) {
     ];
 
     for (field of arr) {
-      if (data[field].trim() === "") {
-        return res
-          .status(400)
-          .send({ status: false, msg: `required value of the ${field}` });
+      if (Object.keys(data).includes(field)) {
+        if (
+          field === "productImage" &&
+          (files === undefined || files.length === 0)
+        ) {
+          return res
+            .status(400)
+            .send({ status: false, msg: "required productImage file" });
+        }
+        if (data[field].trim() === "") {
+          return res
+            .status(400)
+            .send({ status: false, msg: `required value of the ${field}` });
+        }
       }
     }
 
@@ -444,7 +463,7 @@ async function updateProductByParam(req, res) {
 
     if (availableSizes) {
       let arr = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-      let sizes = availableSizes.split(",");
+      let sizes = availableSizes.split(",").map((x) => x.toUpperCase());
       for (field of sizes) {
         if (!arr.includes(field)) {
           return res.status(400).send({
@@ -478,8 +497,11 @@ async function updateProductByParam(req, res) {
       }
     }
 
-    // ----------------------- checking in DB ---------------
-    let check = await productModel.findOne({ productId, isDeleted: false });
+    //checking in DB 
+    let check = await productModel.findOne({
+      _id: productId,
+      isDeleted: false,
+    });
     if (!check) {
       return res
         .status(404)
@@ -490,6 +512,19 @@ async function updateProductByParam(req, res) {
 
     //checking file is there or not , as files comes in array
     if (files && files.length > 0) {
+      if (
+        !(
+          files[0].mimetype == "image/png" ||
+          files[0].mimetype == "image/jpg" ||
+          files[0].mimetype == "image/jpeg"
+        )
+      ) {
+        return res.status(400).send({
+          status: false,
+          message: "Only .png, .jpg and .jpeg format allowed!",
+        });
+      }
+
       let uploadedFileURL = await uploadFile(files[0]);
 
       data.productImage = uploadedFileURL;
