@@ -274,7 +274,17 @@ const userUpdate = async function (req, res) {
     if (!isValidString(fname)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid fname " });
+        .send({ status: false, msg: "Please Enter The Valid fname" });
+    }
+    if(!/^[a-zA-z]$/.test(fname)){
+      return res
+        .status(400)
+        .send({ status: false, msg: "value of fname must be in letters" })
+    }
+    if(fname.trim().length===1){
+      return res
+        .status(400)
+        .send({ status: false, msg: "value of fname must contain more then 1 letter" })
     }
   }
 
@@ -282,7 +292,7 @@ const userUpdate = async function (req, res) {
     if (!isValidString(lname)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid Lname " });
+        .send({ status: false, msg: "Please Enter The Valid Lname" });
     }
   }
 

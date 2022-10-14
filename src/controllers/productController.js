@@ -42,27 +42,6 @@ const createProduct = async function (req, res) {
       });
     }
 
-    const arr = [
-      "title",
-      "description",
-      "price",
-      "currencyId",
-      "currencyFormat",
-      "isFreeShipping",
-      "productImage",
-      "style",
-      "availableSizes",
-      "installments",
-    ];
-
-    for (field of arr) {
-      if (data[field].trim() === "") {
-        return res
-          .status(400)
-          .send({ status: false, msg: `required value of the ${field}` });
-      }
-    }
-
     const requiredFields = [
       "title",
       "description",
@@ -79,42 +58,48 @@ const createProduct = async function (req, res) {
           .send({ status: false, msg: `${field} is required` });
       }
     }
-    if (description) {
-      if (!isValidString(description)) {
+
+    const arr = [
+      "title",
+      "description",
+      "price",
+      "currencyId",
+      "currencyFormat",
+      "availableSizes",
+    ];
+
+    for (field of arr) {
+      if (data[field].trim() === "") {
         return res
           .status(400)
-          .send({ status: false, msg: "description must be in string" });
+          .send({ status: false, msg: `required value of the ${field}` });
       }
     }
 
-    if (price) {
-      if (!isValidPrice(price)) {
-        return res
-          .status(400)
-          .send({ status: false, msg: "price must be in number" });
-      }
-    }
-
-    if (currencyId) {
-      if (!isValidCurencyId(currencyId)) {
-        return res
-          .status(400)
-          .send({ status: false, msg: "currencyId must be in INR" });
-      }
-    }
-
-    if (currencyFormat == "") {
+    if (!isValidString(description)) {
       return res
         .status(400)
-        .send({ status: false, msg: "CurencyFormat should not be empty" });
+        .send({ status: false, msg: "description must be in string" });
     }
-    if (currencyFormat) {
-      if (!isValidCurencyFormat(currencyFormat.trim())) {
-        return res
-          .status(400)
-          .send({ status: false, msg: "CurencyFormat must be in ₹" });
-      }
+
+    if (!isValidPrice(price)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "price must be in number/decimal" });
     }
+
+    if (!isValidCurencyId(currencyId)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "currencyId must be in INR" });
+    }
+
+    if (!isValidCurencyFormat(currencyFormat.trim())) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "CurencyFormat must be in ₹" });
+    }
+
     if (isFreeShipping) {
       if (!["true", "false"].includes(isFreeShipping.trim())) {
         return res
@@ -132,19 +117,24 @@ const createProduct = async function (req, res) {
           .send({ status: false, msg: "style must be in string" });
       }
     }
-    if (availableSizes) {
-      let arr = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-      let sizes = availableSizes.split(",");
-      for (field of sizes) {
-        if (!arr.includes(field)) {
-          return res.status(400).send({
-            status: false,
-            msg: `availableSizes must be in ${arr.join(", ")}`,
-          });
-        }
-      }
-      data.availableSizes = sizes;
+
+    if (!isValidString(title.trim())) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "title must be in string" });
     }
+    let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
+    let sizes = availableSizes.split(",");
+    for (field of sizes) {
+      if (!listOfSizes.includes(field)) {
+        return res.status(400).send({
+          status: false,
+          msg: `availableSizes must be in ${listOfSizes.join(", ")}`,
+        });
+      }
+    }
+    data.availableSizes = sizes;
+
     if (installments) {
       if (!isValidPrice(installments.trim())) {
         return res
@@ -152,19 +142,25 @@ const createProduct = async function (req, res) {
           .send({ status: false, msg: "installments must be in numbers " });
       }
     }
-    if (title) {
-      if (!isValidString(title)) {
-        return res
-          .status(400)
-          .send({ status: false, msg: "Please Enter The Valid title " });
-      }
-      let data = await productModel.findOne({ title });
-      if (data) {
-        return res
-          .status(409)
-          .send({ status: false, msg: "title is already exists" });
-      }
+
+    if (productImage === "") {
+      return res
+        .status(400)
+        .send({ status: false, msg: `required productImage File` });
     }
+
+    if (!isValidString(title)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "Please Enter The Valid title " });
+    }
+    let titleInDb = await productModel.findOne({ title });
+    if (titleInDb) {
+      return res
+        .status(409)
+        .send({ status: false, msg: "title is already exists" });
+    }
+
     //checking file is there or not , as files comes in array
     if (files && files.length > 0) {
       let uploadedFileURL = await uploadFile(files[0]);
@@ -236,7 +232,7 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "name must be in string" });
       }
-      obj.title = name;
+      obj.title = { $regex: `${name}` }; 
     }
 
     //checking priceGreaterThan
@@ -268,8 +264,12 @@ async function getProduct(req, res) {
           .status(400)
           .send({ status: false, msg: "priceSort must be in 1/-1" });
       }
-      let getProduct = await productModel.find(obj).sort({ price: +priceSort });
-      if (getProduct.length===0) {
+      let getProduct = await productModel..aggregate([
+      {
+        $match: obj,
+      },
+    ]).sort({ price: +priceSort });
+      if (getProduct.length === 0) {
         return res
           .status(404)
           .send({ status: false, msg: "products not found" });
@@ -281,8 +281,12 @@ async function getProduct(req, res) {
     }
 
     //to find products
-    let getProduct = await productModel.find(obj);
-    if (getProduct.length===0) {
+    let getProduct = await productModel.aggregate([
+      {
+        $match: obj,
+      },
+    ]);
+    if (getProduct.length === 0) {
       return res.status(404).send({ status: false, msg: "product not found" });
     }
     return res.status(200).send({

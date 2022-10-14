@@ -33,7 +33,7 @@ function isValidPincode(value) {
 }
 
 function isValidPrice(value) {
-  let priceRegex = /^[0-9]*$/;
+  let priceRegex = /^(0|[1-9]\d*)(\.\d+)?$/;
   return priceRegex.test(value);
 }
 
