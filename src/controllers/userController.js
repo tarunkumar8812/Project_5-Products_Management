@@ -18,17 +18,39 @@ const {
 async function createUser(req, res) {
   try {
     const data = req.body;
-    if (!Object.keys(data).includes("address")) {
+    //files form form data
+    let files = req.files;
+
+    // console.log(files);
+
+    const {
+      fname,
+      lname,
+      email,
+      profileImage,
+      phone,
+      password,
+      address,
+      ...rest
+    } = data;
+
+    if (Object.keys(data).length == 0)
+      return res
+        .status(400)
+        .send({ status: false, message: "Please fill data in body" });
+
+    if (Object.keys(rest).length > 0) {
       return res.status(400).send({
         status: false,
-        message: "address is required",
+        message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
       });
     }
-    data.address = JSON.parse(data.address);
+
     const requiredFields = [
       "fname",
       "lname",
       "email",
+      "profileImage",
       "phone",
       "password",
       "address",
@@ -38,18 +60,29 @@ async function createUser(req, res) {
     const sb_Fields = ["shipping", "billing"];
     const unique = ["email", "phone"];
     for (field of requiredFields) {
+      if (field === "profileImage") {
+        if (files === undefined || files.length === 0) {
+          err.push("required productImage file");
+        }
+        continue;
+      }
       if (!Object.keys(data).includes(field)) {
         err.push(`${field} is required`);
         continue;
       }
+      if (data[field].trim() === "") {
+        err.push(`required value of the ${field}`);
+        continue;
+      }
       if (field === "address") {
+        data.address = JSON.parse(data.address);
         if (typeof data[field] !== "object") {
           err.push(`${field} must be in object format`);
           continue;
         }
         for (item of sb_Fields) {
           if (!Object.keys(data[field]).includes(item)) {
-            err.push(`${item} is required`);       
+            err.push(`${item} is required`);
             continue;
           }
           let obj = data[field];
@@ -114,6 +147,8 @@ async function createUser(req, res) {
       }
     }
 
+    // console.log(err);
+
     if (err.length > 0) {
       return res.status(400).send({
         status: false,
@@ -121,11 +156,20 @@ async function createUser(req, res) {
       });
     }
 
-    //files form form data
-    let files = req.files;
-
     //checking file is there or not , as files comes in array
     if (files && files.length > 0) {
+      if (
+        !(
+          files[0].mimetype == "image/png" ||
+          files[0].mimetype == "image/jpg" ||
+          files[0].mimetype == "image/jpeg"
+        )
+      ) {
+        return res.status(400).send({
+          status: false,
+          message: "Only .png, .jpg and .jpeg format allowed!",
+        });
+      }
       let uploadedFileURL = await uploadFile(files[0]);
 
       data.profileImage = uploadedFileURL;
@@ -136,8 +180,6 @@ async function createUser(req, res) {
         status: true,
         data: createUserData,
       });
-    } else {
-      return res.status(400).send({ message: "No file Found" });
     }
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
@@ -188,7 +230,7 @@ const login = async function (req, res) {
       if (result !== true) {
         return res
           .status(401)
-          .send({ success: false, message: "passwords do not match" });
+          .send({ success: false, message: "incorrect password" });
       } else {
         // ---------- creating JWT Token ------------
 
@@ -256,19 +298,46 @@ const userUpdate = async function (req, res) {
   let body = req.body;
   let files = req.files;
 
+  let { fname, lname, email, profileImage, phone, password, address, ...rest } =
+    body;
+
   if (!ObjectId.isValid(userid)) {
     return res
       .status(400)
       .send({ status: false, msg: "Please Enter Valid userID" });
   }
 
-  if (Object.keys(body).length == 0 && files.length === 0) {
-    return res
-      .status(400)
-      .send({ status: false, msg: "Please Enter Valid Details" });
+  if (Object.keys(body).length == 0 && files === undefined) {
+    return res.status(400).send({
+      status: false,
+      msg: "for updation atleast one key value pair is required",
+    });
   }
 
-  let { fname, lname, email, phone, password, address } = body;
+  if (Object.keys(rest).length > 0) {
+    return res.status(400).send({
+      status: false,
+      message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
+    });
+  }
+  const arr = ["fname", "lname", "email", "profileImage", "phone", "password"];
+  for (field of arr) {
+    if (Object.keys(body).includes(field)) {
+      if (
+        field === "profileImage" &&
+        (files === undefined || files.length === 0)
+      ) {
+        return res
+          .status(400)
+          .send({ status: false, msg: "required profileImage file" });
+      }
+      if (body[field].trim() === "") {
+        return res
+          .status(400)
+          .send({ status: false, msg: `required value of the ${field}` });
+      }
+    }
+  }
 
   if (fname) {
     if (!isValidString(fname)) {
@@ -276,15 +345,16 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, msg: "Please Enter The Valid fname" });
     }
-    if(!/^[a-zA-z]$/.test(fname)){
+    if (!/^[A-Z a-z]+$/.test(fname)) {
       return res
         .status(400)
-        .send({ status: false, msg: "value of fname must be in letters" })
+        .send({ status: false, msg: "value of fname must be in letters" });
     }
-    if(fname.trim().length===1){
-      return res
-        .status(400)
-        .send({ status: false, msg: "value of fname must contain more then 1 letter" })
+    if (fname.trim().length === 1) {
+      return res.status(400).send({
+        status: false,
+        msg: "value of fname must contain more then 1 letter",
+      });
     }
   }
 
@@ -293,6 +363,17 @@ const userUpdate = async function (req, res) {
       return res
         .status(400)
         .send({ status: false, msg: "Please Enter The Valid Lname" });
+    }
+    if (!/^[A-Z a-z]+$/.test(lname)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "value of fname must be in letters" });
+    }
+    if (lname.trim().length === 1) {
+      return res.status(400).send({
+        status: false,
+        msg: "value of lname must contain more then 1 letter",
+      });
     }
   }
 
@@ -305,7 +386,7 @@ const userUpdate = async function (req, res) {
     if (!isValidEmail(email)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid email  " });
+        .send({ status: false, msg: "Please Enter The Valid email" });
     }
   }
 
@@ -328,10 +409,13 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, msg: "password must be in string format" });
     }
-    if (!isValidPass) {
+    if (!isValidPass(password)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid password  " });
+        .send({
+          status: false,
+          msg: "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)",
+        });
     }
     const encryptPassword = await bcrypt.hash(password, 5);
     body.password = encryptPassword;
@@ -341,11 +425,21 @@ const userUpdate = async function (req, res) {
 
   //checking file is there or not , as files comes in array
   if (files && files.length > 0) {
-    if (files.length > 0) {
-      let uploadedFileURL = await uploadFile(files[0]);
-
-      obj.profileImage = uploadedFileURL;
+    if (
+      !(
+        files[0].mimetype == "image/png" ||
+        files[0].mimetype == "image/jpg" ||
+        files[0].mimetype == "image/jpeg"
+      )
+    ) {
+      return res.status(400).send({
+        status: false,
+        message: "Only .png, .jpg and .jpeg format allowed!",
+      });
     }
+    let uploadedFileURL = await uploadFile(files[0]);
+
+    obj.profileImage = uploadedFileURL;
   }
 
   if (address) {
@@ -354,11 +448,19 @@ const userUpdate = async function (req, res) {
     for (field of arr) {
       if (field) {
         let { street, city, pincode } = field;
+        let arr = ["street", "city", "pincode"];
+        for (key of arr) {
+          if (field[key] === "") {
+            return res
+              .status(400)
+              .send({ status: false, msg: `required value of ${key}` });
+          }
+        }
         if (street) {
           if (!isValidString(street)) {
             return res
               .status(400)
-              .send({ status: false, msg: "Please Enter The Valid Street  " });
+              .send({ status: false, msg: "Please Enter The Valid Street " });
           }
           if (field == shipping) {
             obj["address.shipping.street"] = field.street;

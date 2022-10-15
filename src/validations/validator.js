@@ -78,7 +78,7 @@ const validPW_4_Login = function (value) {
   if (value == undefined) { return "Password is mandatory" }
   if (typeof value !== "string") { return "Password must be string" }
   if (value.trim() == "") { return "Password can not be empty" }
-  if (value.trim().length < 8) { return "Use strong password, minimum 8 chacracters are required" }
+  if (value.trim().length < 8) { return "Too short password, minimum 8 chacracters are required" }
   if (value.trim().length > 15) { return "Too long password, maximum 15 chacracters are allowed" }
 
   return true
