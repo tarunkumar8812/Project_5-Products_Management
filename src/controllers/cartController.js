@@ -66,39 +66,49 @@ async function createCart(req, res) {
 
     let price = product.price;
 
-    if (cartId) {
-      let cart = await cartModel.findOne({ _id: cartId });
-      if (!cart) {
-        return res
-          .status(404)
-          .send({ status: false, message: "cart not found" });
-      }
-      let proIdsInCart = cart.items.map((x) => x.productId.toString());
-      for (let i = 0; i < proIdsInCart.length; i++) {
-        if (proIdsInCart.includes(productId)) {
-          cart.items[i].quantity += 1;
-        } else {
-          let items = {};
-          items.productId = productId;
-          items.quantity = 1;
-          cart.items.push(items);
+    let cartOfUser = await cartModel.findOne({ userId: userId });
+    if (cartOfUser) {
+      if (cartId) {
+        let cart = await cartModel.findOne({ _id: cartId });
+        if (!cart) {
+          return res
+            .status(404)
+            .send({ status: false, message: "cart not found" });
         }
+        let proIdsInCart = cart.items.map((x) => x.productId.toString());
+        for (let i = 0; i < proIdsInCart.length; i++) {
+          if (proIdsInCart.includes(productId)) {
+            cart.items[i].quantity += 1;
+          } else {
+            let items = {};
+            items.productId = productId;
+            items.quantity = 1;
+            cart.items.push(items);
+          }
+        }
+        let cartQuantity = cart.items.map((x) => x.quantity);
+        cart.totalPrice += price;
+        cart.totalItems = cartQuantity.reduce((acc, cur) => acc + cur, 0); //+1
+        let updateData = cart.toObject();
+        delete updateData["_id"];
+        delete updateData["userId"];
+        let upCart = await cartModel.findOneAndUpdate(
+          { userId: userId },
+          updateData,
+          { new: true }
+        );
+        return res.status(200).send({
+          status: true,
+          data: upCart,
+        });
       }
-      let cartQuantity = cart.items.map((x) => x.quantity);
-      cart.totalPrice += price;
-      cart.totalItems = cartQuantity.reduce((acc, cur) => acc + cur, 0);
-      let updateData = cart.toObject();
-      delete updateData["_id"];
-      delete updateData["userId"];
-      let upCart = await cartModel.findOneAndUpdate(
-        { userId: userId },
-        updateData,
-        { new: true }
-      );
-      return res.status(200).send({
-        status: true,
-        data: upCart,
-      });
+      return res
+        .status(400)
+        .send({
+          status: false,
+          message:
+            "there is already a cart is there for the give user, so required cartId in request body",
+        });
     }
 
     let items = {};
