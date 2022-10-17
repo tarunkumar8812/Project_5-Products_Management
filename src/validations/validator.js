@@ -59,7 +59,7 @@ function isValidCurencyFormat(value) {
 // ------------- validation of email -------------
 
 const validEmail = function (value) {
-  if (value == undefined) { return "Email is mandatory" }
+  if (value == undefined) { return "Email is required" }
   if (typeof value !== "string") { return "Email must be string" }
   if (value.trim() == "") { return "Email can not be empty" }
 
@@ -75,7 +75,7 @@ const validEmail = function (value) {
 }
 
 const validPW_4_Login = function (value) {
-  if (value == undefined) { return "Password is mandatory" }
+  if (value == undefined) { return "Password is required" }
   if (typeof value !== "string") { return "Password must be string" }
   if (value.trim() == "") { return "Password can not be empty" }
   if (value.trim().length < 8) { return "Too short password, minimum 8 chacracters are required" }

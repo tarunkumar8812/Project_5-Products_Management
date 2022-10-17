@@ -94,7 +94,7 @@ async function createUser(req, res) {
             }
             if (key === "pincode") {
               if (!isValidPincode(pObj[key])) {
-                err.push(`${key} must be in 6 digits`);
+                err.push(`${key} must be in 6 digits in ${item}`);
               }
               continue;
             }
@@ -223,7 +223,7 @@ const login = async function (req, res) {
     if (!user_in_DB)
       return res.status(401).send({
         status: false,
-        message: "invalid credentials (email or the password is not correct)",
+        message: "invalid credentials (email or the password is incorrect)",
       });
 
     bcrypt.compare(password, user_in_DB.password, function (err, result) {
@@ -410,12 +410,10 @@ const userUpdate = async function (req, res) {
         .send({ status: false, msg: "password must be in string format" });
     }
     if (!isValidPass(password)) {
-      return res
-        .status(400)
-        .send({
-          status: false,
-          msg: "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)",
-        });
+      return res.status(400).send({
+        status: false,
+        msg: "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)",
+      });
     }
     const encryptPassword = await bcrypt.hash(password, 5);
     body.password = encryptPassword;
@@ -460,7 +458,7 @@ const userUpdate = async function (req, res) {
           if (!isValidString(street)) {
             return res
               .status(400)
-              .send({ status: false, msg: "Please Enter The Valid Street " });
+              .send({ status: false, msg: "Street value must in string format" });
           }
           if (field == shipping) {
             obj["address.shipping.street"] = field.street;
@@ -473,7 +471,7 @@ const userUpdate = async function (req, res) {
           if (!isValidString(city)) {
             return res
               .status(400)
-              .send({ status: false, msg: "Please Enter The Valid city " });
+              .send({ status: false, msg: "city value must in string format" });
           }
           if (field == shipping) {
             obj["address.shipping.city"] = field.city;

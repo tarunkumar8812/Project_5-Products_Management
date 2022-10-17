@@ -13,8 +13,10 @@ const {
   getProduct,
   getProductByParam,
   updateProductByParam,
-  deleteProduct
+  deleteProduct,
 } = require("../controllers/productController");
+
+const { createCart } = require("../controllers/cartController");
 
 const { authentication, authorization } = require("../middleware/auth");
 
@@ -25,8 +27,10 @@ router.put("/user/:userId/profile", authentication, authorization, userUpdate);
 
 router.post("/products", createProduct);
 router.get("/products", getProduct);
-router.get("/products/:productId", getProductByParam)
-router.put("/products/:productId", updateProductByParam)
-router.delete("/products/:productId", deleteProduct)
+router.get("/products/:productId", getProductByParam);
+router.put("/products/:productId", updateProductByParam);
+router.delete("/products/:productId", deleteProduct);
+
+router.post("/users/:userId/cart", createCart);
 
 module.exports = router;

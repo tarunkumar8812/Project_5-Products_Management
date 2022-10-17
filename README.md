@@ -210,9 +210,6 @@ On success - Return HTTP status 200. Also return the product documents. The resp
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
 
 
-
-
-
 PUT /products/:productId
 Updates a product by changing at least one or all fields
 Check if the productId exists (must have isDeleted false and is present in collection). If it doesn't, return an HTTP status 404 with a response body like this
@@ -224,9 +221,6 @@ Deletes a product by product id if it's not already deleted
 Response format
 On success - Return HTTP status 200. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
-
-
-
 
 
 
@@ -245,6 +239,8 @@ Cart Model
   updatedAt: {timestamp},
 }
 Cart APIs (authentication required as authorization header - bearer token)
+
+
 POST /users/:userId/cart (Add to cart)
 Create a cart for the user if it does not exist. Else add product(s) in cart.
 Get cart id in request body.
@@ -258,9 +254,6 @@ Get product(s) details in response body.
 Response format
 On success - Return HTTP status 201. Also return the cart document. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
-
-
-
 
 PUT /users/:userId/cart (Remove product / Reduce a product's quantity from the cart)
 Updates a cart by either decrementing the quantity of a product by 1 or deleting a product from the cart.
@@ -276,6 +269,8 @@ Check if the productId exists and is not deleted before updating the cart.
 Response format
 On success - Return HTTP status 200. Also return the updated cart document. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
+
+
 GET /users/:userId/cart
 Returns cart summary of the user.
 Make sure that cart exist.
@@ -285,6 +280,8 @@ Get product(s) details in response body.
 Response format
 On success - Return HTTP status 200. Return the cart document. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
+
+
 DELETE /users/:userId/cart
 Deletes the cart for the user.
 Make sure that cart exist.

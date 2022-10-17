@@ -14,7 +14,7 @@ const createProduct = async function (req, res) {
     const data = req.body;
     let files = req.files;
 
-    console.log(files);
+    // console.log(files);
 
     const {
       title,
@@ -125,13 +125,8 @@ const createProduct = async function (req, res) {
       }
     }
 
-    if (!isValidString(title.trim())) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "title must be in string" });
-    }
     let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-    let sizes = availableSizes.split(",");
+    let sizes = availableSizes.split(",").map(x=>x.toUpperCase());
     for (field of sizes) {
       if (!listOfSizes.includes(field)) {
         return res.status(400).send({
@@ -150,10 +145,10 @@ const createProduct = async function (req, res) {
       }
     }
 
-    if (!isValidString(title)) {
+    if (!isValidString(title.trim())) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid title " });
+        .send({ status: false, msg: "title must be in string" });
     }
     let titleInDb = await productModel.findOne({ title });
     if (titleInDb) {
@@ -240,7 +235,7 @@ async function getProduct(req, res) {
           .send({ status: false, msg: "size must be in string" });
       }
       let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-      let sizes = size.split(",");
+      let sizes = size.split(",").map(x=>x.toUpperCase());
       for (field of sizes) {
         if (!listOfSizes.includes(field)) {
           return res.status(400).send({
