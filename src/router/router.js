@@ -16,7 +16,7 @@ const {
   deleteProduct,
 } = require("../controllers/productController");
 
-const { createCart } = require("../controllers/cartController");
+const { createCart, updateCart } = require("../controllers/cartController");
 
 const { authentication, authorization } = require("../middleware/auth");
 
@@ -32,5 +32,6 @@ router.put("/products/:productId", updateProductByParam);
 router.delete("/products/:productId", deleteProduct);
 
 router.post("/users/:userId/cart", authentication, createCart);
+router.put("/users/:userId/cart", authentication, updateCart);
 
 module.exports = router;
