@@ -9,12 +9,6 @@ async function createCart(req, res) {
     let data = req.body;
     let userId = req.params.userId;
 
-    if (Object.keys(data).length == 0) {
-      return res
-        .status(400)
-        .send({ status: false, message: "Please fill data in body" });
-    }
-
     if (userId === ":userId") {
       return res
         .status(400)
@@ -25,6 +19,16 @@ async function createCart(req, res) {
       return res
         .status(400)
         .send({ status: false, message: "required valid userId" });
+    }
+
+    if (userId !== req.decoded.userId) {
+      return res.status(401).send({ status: false, message: "not auth" });
+    }
+
+    if (Object.keys(data).length == 0) {
+      return res
+        .status(400)
+        .send({ status: false, message: "Please fill data in body" });
     }
 
     let productId = data.items.map((x) => x.productId);

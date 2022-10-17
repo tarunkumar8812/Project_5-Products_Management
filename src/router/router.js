@@ -31,6 +31,6 @@ router.get("/products/:productId", getProductByParam);
 router.put("/products/:productId", updateProductByParam);
 router.delete("/products/:productId", deleteProduct);
 
-router.post("/users/:userId/cart", createCart);
+router.post("/users/:userId/cart", authentication, createCart);
 
 module.exports = router;
