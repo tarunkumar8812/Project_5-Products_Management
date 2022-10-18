@@ -30,9 +30,9 @@ async function createCart(req, res) {
         .send({ status: false, message: "required valid userId" });
     }
 
-    if (userId !== req.decoded.userId) {
-      return res.status(401).send({ status: false, message: "not auth" });
-    }
+    // if (userId !== req.decoded.userId) {
+    //   return res.status(401).send({ status: false, message: "not auth" });
+    // }
 
     if (Object.keys(data).length == 0) {
       return res
@@ -76,7 +76,7 @@ async function createCart(req, res) {
             .send({ status: false, message: "cart not found" });
         }
         let proIdsInCart = cart.items.map((x) => x.productId.toString());
-        for (let i = 0; i < proIdsInCart.length; i++) {
+        for (let i = 0; i <= proIdsInCart.length; i++) {
           if (proIdsInCart.includes(productId)) {
             cart.items[i].quantity += 1;
           } else {
@@ -129,6 +129,10 @@ async function createCart(req, res) {
     return res.status(500).send({ status: false, message: err.message });
   }
 }
+
+
+
+
 
 //====================updateCart========================//
 async function updateCart(req, res) {
