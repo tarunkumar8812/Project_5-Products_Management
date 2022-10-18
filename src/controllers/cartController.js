@@ -268,4 +268,114 @@ async function updateCart(req, res) {
   }
 }
 
-module.exports = { createCart, updateCart };
+
+
+// --------------- get Cart ---------------------------
+
+
+async function getCart(req, res) {
+  try {
+    let userId = req.params.userId;
+
+
+
+    if (userId === ":userId") {
+      return res
+        .status(400)
+        .send({ status: false, message: "userId required" });
+    }
+
+    if (!ObjectId.isValid(userId)) {
+      return res
+        .status(400)
+        .send({ status: false, message: "required valid userId" });
+    }
+
+    // if (userId !== req.decoded.userId) {
+    //   return res.status(401).send({ status: false, message: "not auth" });
+    // }
+
+    let user_in_DB = await userModel.findById(userId)
+    if (!user_in_DB) {
+      return res
+        .status(404)
+        .send({ status: false, message: "user not not found" });
+    }
+
+    let cart_in_DB = await cartModel.findOne({ userId: userId }).select({ __v: 0 })
+    if (!cart_in_DB) {
+      return res
+        .status(404)
+        .send({ status: false, message: "cart not not found" });
+    }
+
+    return res.status(200).send({
+      status: true,
+      data: cart_in_DB,
+    });
+
+  } catch (err) {
+    return res.status(500).send({ status: false, message: err.message });
+  }
+}
+
+
+
+
+
+// ----------- delete Cart API ----------------
+
+async function deleteCart(req, res) {
+  try {
+    let userId = req.params.userId;
+
+
+    if (userId === ":userId") {
+      return res
+        .status(400)
+        .send({ status: false, message: "userId required" });
+    }
+
+    if (!ObjectId.isValid(userId)) {
+      return res
+        .status(400)
+        .send({ status: false, message: "required valid userId" });
+    }
+
+    // if (userId !== req.decoded.userId) {
+    //   return res.status(401).send({ status: false, message: "not auth" });
+    // }
+
+    let user_in_DB = await userModel.findById(userId)
+    if (!user_in_DB) {
+      return res
+        .status(404)
+        .send({ status: false, message: "user not not found" });
+    }
+
+    let cart_in_DB = await cartModel.findOneAndUpdate({ userId: userId }, {
+      items: [],
+      totalPrice: 0,
+      totalItems: 0
+    }, { new: true })
+
+    
+    if (!cart_in_DB) {
+      return res
+        .status(404)
+        .send({ status: false, message: "cart not found" });
+    }
+
+ 
+// ------- doubt 204 status code use case -----------
+    return res.status(204).send({
+      status: true,
+      data: cart_in_DB,
+    });
+
+  } catch (err) {
+    return res.status(500).send({ status: false, message: err.message });
+  }
+}
+
+module.exports = { createCart, updateCart, getCart, deleteCart };

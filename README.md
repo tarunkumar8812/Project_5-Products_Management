@@ -291,6 +291,11 @@ cart deleting means array of items is empty, totalItems is 0, totalPrice is 0.
 Response format
 On success - Return HTTP status 204. Return a suitable message. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
+
+
+
+
+
 FEATURE IV - Order
 Models
 Order Model
