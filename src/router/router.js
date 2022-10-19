@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const { login } = require("../controllers/userController");
 const {
   createUser,
   login,
@@ -41,7 +40,7 @@ router.delete("/users/:userId/cart", authentication, deleteCart);
 
 
 
-router.post("users/:userId/orders", createOrder);
-router.put("users/:userId/orders", updateOrder);
+router.post("/users/:userId/orders", createOrder);
+router.put("/users/:userId/orders", updateOrder);
 
 module.exports = router;
