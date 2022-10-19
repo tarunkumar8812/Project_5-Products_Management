@@ -27,11 +27,6 @@ async function createOrder(req, res) {
       }
     }
 
-    // ------------ checking user in DB -------------
-    let user_in_DB = await userModel.findById(userId);
-    if (!user_in_DB) {
-      return res.status(404).send({ status: false, message: "user not found" });
-    }
 
     // ------------ checking cart in DB -------------
     let cart_in_DB = await cartModel.findOne({ userId: userId }).lean();
