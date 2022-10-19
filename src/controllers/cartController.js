@@ -82,8 +82,15 @@ async function createCart(req, res) {
 
         //Getting all the productIds in a cart to a variable as an array
         let proIdsInCart = cart.items.map((x) => x.productId.toString());
-        for (let i = 0; i <= proIdsInCart.length; i++) {
-          if (proIdsInCart.includes(productId)) {
+        //If the items lenght is 0, we have push the products with out checking
+        if (proIdsInCart.length === 0) {
+          let items = {};
+          items.productId = productId;
+          items.quantity = 1;
+          cart.items.push(items);
+        }
+        for (let i = 0; i < proIdsInCart.length; i++) {
+          if (proIdsInCart[i] === productId) {
             //If productId is already present in cart, just increase the quantity
             cart.items[i].quantity += 1;
           } else {
@@ -94,12 +101,10 @@ async function createCart(req, res) {
             cart.items.push(items);
           }
         }
-        //Getting all the quantities products in a cart to a variable
-        let cartQuantity = cart.items.map((x) => x.quantity);
 
         //increasing totalPrice and totalItems
         cart.totalPrice += price;
-        cart.totalItems = cart.items.lenght;
+        cart.totalItems = cart.items.length;
         let updateData = cart.toObject();
         //deleting unnecessary keys and there values in updateData
         delete updateData["_id"];
@@ -116,8 +121,7 @@ async function createCart(req, res) {
       }
       return res.status(400).send({
         status: false,
-        message:
-          "there is already a cart is there for the give user, so required cartId in request body",
+        message: `there is already a cart is there for the give user, so required cartId(${cartOfUser._id}) in request body`,
       });
     }
 
@@ -221,7 +225,6 @@ async function updateCart(req, res) {
         if (data.productId === cart.items[i].productId.toString()) {
           cart.items[i].quantity -= 1;
           cart.totalPrice -= cartProductsPrices[i];
-          cart.totalItems -= 1;
         }
 
         //While reducing the quantity, If quantity becomes 0 we have to remove the product from the items
@@ -234,7 +237,7 @@ async function updateCart(req, res) {
             {
               items: items,
               totalPrice: cart.totalPrice,
-              totalItems: cart.totalItems,
+              totalItems: items.length,
             },
             { new: true }
           );
@@ -251,7 +254,7 @@ async function updateCart(req, res) {
         {
           items: cart.items,
           totalPrice: cart.totalPrice,
-          totalItems: cart.totalItems,
+          // totalItems: cart.totalItems,
         },
         { new: true }
       );
