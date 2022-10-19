@@ -3,6 +3,7 @@ const productModel = require("../models/productModel");
 const userModel = require("../models/userModel");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
+const { isValidString } = require("../validations/validator");
 
 async function createCart(req, res) {
   try {
@@ -30,10 +31,6 @@ async function createCart(req, res) {
         .send({ status: false, message: "required valid userId" });
     }
 
-    if (userId !== req.decoded.userId) {
-      return res.status(401).send({ status: false, message: "not auth" });
-    }
-
     if (Object.keys(data).length == 0) {
       return res
         .status(400)
@@ -41,6 +38,11 @@ async function createCart(req, res) {
     }
 
     if (cartId) {
+      if (!isValidString(cartId)) {
+        return res
+          .status(400)
+          .send({ status: false, msg: "the value of cartId must be string" });
+      }
       if (!ObjectId.isValid(cartId)) {
         return res
           .status(400)
@@ -48,10 +50,21 @@ async function createCart(req, res) {
       }
     }
 
+    if (!isValidString(productId)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "the value of productId must be string" });
+    }
     if (!ObjectId.isValid(productId)) {
       return res
         .status(400)
         .send({ status: false, message: "required valid productId" });
+    }
+
+    // ------------ checking user in DB -------------
+    let user_in_DB = await userModel.findById(userId);
+    if (!user_in_DB) {
+      return res.status(404).send({ status: false, message: "user not found" });
     }
 
     //checking product in DB
@@ -63,6 +76,10 @@ async function createCart(req, res) {
       return res
         .status(404)
         .send({ status: false, message: "product not found" });
+    }
+
+    if (userId !== req.decoded.userId) {
+      return res.status(401).send({ status: false, message: "not auth" });
     }
 
     //Getting product price
@@ -93,13 +110,13 @@ async function createCart(req, res) {
           if (proIdsInCart[i] === productId) {
             //If productId is already present in cart, just increase the quantity
             cart.items[i].quantity += 1;
-          } else {
-            //else push the product to items
-            let items = {};
-            items.productId = productId;
-            items.quantity = 1;
-            cart.items.push(items);
           }
+        }
+        if (!proIdsInCart.includes(productId)) {
+          let items = {};
+          items.productId = productId;
+          items.quantity = 1;
+          cart.items.push(items);
         }
 
         //increasing totalPrice and totalItems
@@ -172,16 +189,22 @@ async function updateCart(req, res) {
         .send({ status: false, message: "required valid userId" });
     }
 
-    if (userId !== req.decoded.userId) {
-      return res.status(401).send({ status: false, message: "not auth" });
+    if (!isValidString(cartId)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "the value of cartId must be string" });
     }
-
     if (!ObjectId.isValid(cartId)) {
       return res
         .status(400)
         .send({ status: false, message: "required valid cartId" });
     }
 
+    if (!isValidString(productId)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "the value of productId must be string" });
+    }
     if (!ObjectId.isValid(productId)) {
       return res
         .status(400)
@@ -192,6 +215,15 @@ async function updateCart(req, res) {
       return res
         .status(400)
         .send({ status: false, message: "removeProduct must be number(0/1)" });
+    }
+
+    let user_in_DB = await userModel.findById(userId);
+    if (!user_in_DB) {
+      return res.status(404).send({ status: false, message: "user not found" });
+    }
+
+    if (userId !== req.decoded.userId) {
+      return res.status(401).send({ status: false, message: "not auth" });
     }
 
     //checking cart in DB
@@ -323,15 +355,15 @@ async function getCart(req, res) {
         .send({ status: false, message: "required valid userId" });
     }
 
-    if (userId !== req.decoded.userId) {
-      return res.status(401).send({ status: false, message: "not auth" });
-    }
-
     let user_in_DB = await userModel.findById(userId);
     if (!user_in_DB) {
       return res
         .status(404)
         .send({ status: false, message: "user not not found" });
+    }
+
+    if (userId !== req.decoded.userId) {
+      return res.status(403).send({ status: false, message: "not auth" });
     }
 
     let cart_in_DB = await cartModel
@@ -370,15 +402,15 @@ async function deleteCart(req, res) {
         .send({ status: false, message: "required valid userId" });
     }
 
-    if (userId !== req.decoded.userId) {
-      return res.status(401).send({ status: false, message: "not auth" });
-    }
-
     let user_in_DB = await userModel.findById(userId);
     if (!user_in_DB) {
       return res
         .status(404)
         .send({ status: false, message: "user not not found" });
+    }
+
+    if (userId !== req.decoded.userId) {
+      return res.status(403).send({ status: false, message: "not auth" });
     }
 
     let cart_in_DB = await cartModel.findOneAndUpdate(
