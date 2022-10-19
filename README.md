@@ -184,12 +184,18 @@ Product Model
   updatedAt: {timestamp},
 }
 Products API (No authentication required)
+
+
+
 POST /products
 Create a product document from request body.
 Upload product image to S3 bucket and save image public url in document.
 Response format
 On success - Return HTTP status 201. Also return the product document. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
+
+
+
 GET /products
 Returns all products in the collection that aren't deleted.
 Filters
@@ -203,6 +209,9 @@ Sorted by product price in ascending or descending. The key value pair will look
 Response format
 On success - Return HTTP status 200. Also return the product documents. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
+
+
+
 GET /products/:productId
 Returns product details by product id
 Response format
@@ -216,6 +225,8 @@ Check if the productId exists (must have isDeleted false and is present in colle
 Response format
 On success - Return HTTP status 200. Also return the updated product document. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
+
+
 DELETE /products/:productId
 Deletes a product by product id if it's not already deleted
 Response format
@@ -316,6 +327,9 @@ Order Model
   updatedAt: {timestamp},
 }
 Checkout/Order APIs (Authentication and authorization required)
+
+
+
 POST /users/:userId/orders
 Create an order for the user
 Make sure the userId in params and in JWT token match.
@@ -324,6 +338,9 @@ Get cart details in the request body
 Response format
 On success - Return HTTP status 200. Also return the order document. The response should be a JSON object like this
 On error - Return a suitable error message with a valid HTTP status code. The response should be a JSON object like this
+
+
+
 PUT /users/:userId/orders
 Updates an order status
 Make sure the userId in params and in JWT token match.

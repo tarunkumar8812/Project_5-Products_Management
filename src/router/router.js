@@ -18,6 +18,9 @@ const {
 
 const { createCart, updateCart, getCart, deleteCart } = require("../controllers/cartController");
 
+
+const { createOrder, updateOrder } = require("../controllers/orderController");
+
 const { authentication, authorization } = require("../middleware/auth");
 
 router.post("/register", createUser);
@@ -31,9 +34,14 @@ router.get("/products/:productId", getProductByParam);
 router.put("/products/:productId", updateProductByParam);
 router.delete("/products/:productId", deleteProduct);
 
-router.post("/users/:userId/cart",authentication, createCart);
-router.put("/users/:userId/cart",authentication, updateCart);
-router.get("/users/:userId/cart",authentication, getCart);
-router.delete("/users/:userId/cart",authentication, deleteCart);
+router.post("/users/:userId/cart", authentication, createCart);
+router.put("/users/:userId/cart", authentication, updateCart);
+router.get("/users/:userId/cart", authentication, getCart);
+router.delete("/users/:userId/cart", authentication, deleteCart);
+
+
+
+router.post("users/:userId/orders", createOrder);
+router.put("users/:userId/orders", updateOrder);
 
 module.exports = router;
