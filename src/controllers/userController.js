@@ -62,12 +62,12 @@ async function createUser(req, res) {
     for (field of requiredFields) {
       if (field === "profileImage") {
         if (files === undefined || files.length === 0) {
-          err.push("required productImage file");
+          err.push("required profileImage as key and file as value");
         }
         continue;
       }
       if (!Object.keys(data).includes(field)) {
-        err.push(`${field} is required`);
+        err.push(`${field} key is required in request body`);
         continue;
       }
       if (data[field].trim() === "") {
@@ -82,14 +82,14 @@ async function createUser(req, res) {
         }
         for (item of sb_Fields) {
           if (!Object.keys(data[field]).includes(item)) {
-            err.push(`${item} is required`);
+            err.push(`${item} address is required`);
             continue;
           }
           let obj = data[field];
           let pObj = obj[item];
           for (key of addressFields) {
             if (!Object.keys(pObj).includes(key)) {
-              err.push(`${key} is required in ${item}`);
+              err.push(`${key} is required in ${item} address`);
               continue;
             }
             if (key === "pincode") {
@@ -112,7 +112,7 @@ async function createUser(req, res) {
       if (field === "password") {
         if (!isValidPass(data[field]))
           err.push(
-            "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)"
+            "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 15 characters)"
           );
         bcrypt.hash(data[field], 5, function (err, hash) {
           // Store hash in your password DB.
@@ -125,6 +125,9 @@ async function createUser(req, res) {
     }
     for (uni of unique) {
       if (!Object.keys(data).includes(uni)) {
+        continue;
+      }
+      if (data[uni].trim() === "") {
         continue;
       }
       if (uni === "email") {
@@ -276,14 +279,14 @@ const getUser = async function (req, res) {
       return res.status(400).send({ status: false, message: "invalid userId" });
     }
 
+    const getUser = await userModel.findById(userId);
+    if (!getUser) {
+      return res.status(404).send({ status: false, message: "user not exist" });
+    }
     if (req.decoded.userId === userId) {
-      const getUser = await userModel.findById(userId);
-      if (!getUser) {
-        return res
-          .status(404)
-          .send({ status: false, message: "user not exist" });
-      }
-      return res.status(200).send({ status: true, data: getUser });
+      return res
+        .status(200)
+        .send({ status: true, message: "User profile details", data: getUser });
     }
     return res.status(401).send({ status: false, message: "not auth" });
   } catch (err) {
@@ -301,12 +304,6 @@ const userUpdate = async function (req, res) {
   let { fname, lname, email, profileImage, phone, password, address, ...rest } =
     body;
 
-  if (!ObjectId.isValid(userid)) {
-    return res
-      .status(400)
-      .send({ status: false, msg: "Please Enter Valid userID" });
-  }
-
   if (Object.keys(body).length == 0 && files === undefined) {
     return res.status(400).send({
       status: false,
@@ -320,7 +317,15 @@ const userUpdate = async function (req, res) {
       message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
     });
   }
-  const arr = ["fname", "lname", "email", "profileImage", "phone", "password"];
+  const arr = [
+    "fname",
+    "lname",
+    "email",
+    "profileImage",
+    "phone",
+    "password",
+    "address",
+  ];
   for (field of arr) {
     if (Object.keys(body).includes(field)) {
       if (
@@ -441,6 +446,7 @@ const userUpdate = async function (req, res) {
   }
 
   if (address) {
+    address = JSON.parse(address);
     let { shipping, billing } = address;
     let arr = [shipping, billing];
     for (field of arr) {
@@ -456,9 +462,10 @@ const userUpdate = async function (req, res) {
         }
         if (street) {
           if (!isValidString(street)) {
-            return res
-              .status(400)
-              .send({ status: false, msg: "Street value must in string format" });
+            return res.status(400).send({
+              status: false,
+              msg: "Street value must in string format",
+            });
           }
           if (field == shipping) {
             obj["address.shipping.street"] = field.street;
