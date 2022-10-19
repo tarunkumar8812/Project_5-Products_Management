@@ -126,7 +126,7 @@ const createProduct = async function (req, res) {
     }
 
     let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-    let sizes = availableSizes.split(",").map(x=>x.toUpperCase());
+    let sizes = availableSizes.split(",").map((x) => x.toUpperCase());
     for (field of sizes) {
       if (!listOfSizes.includes(field)) {
         return res.status(400).send({
@@ -235,7 +235,7 @@ async function getProduct(req, res) {
           .send({ status: false, msg: "size must be in string" });
       }
       let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-      let sizes = size.split(",").map(x=>x.toUpperCase());
+      let sizes = size.split(",").map((x) => x.toUpperCase());
       for (field of sizes) {
         if (!listOfSizes.includes(field)) {
           return res.status(400).send({
@@ -277,11 +277,15 @@ async function getProduct(req, res) {
       obj.price = { $lte: priceLessThan };
     }
 
+    if (priceGreaterThan && priceLessThan) {
+      obj.price = { $gte: priceGreaterThan, $lte: priceLessThan };
+    }
+
     obj.isDeleted = false;
 
     //checking priceSort
     if (priceSort) {
-      if (!(priceSort !== "-1" || priceSort !== "1")) {
+      if (!(priceSort == "-1" || priceSort == "1")) {
         return res
           .status(400)
           .send({ status: false, msg: "priceSort must be in 1/-1" });
@@ -308,6 +312,7 @@ async function getProduct(req, res) {
     }
     return res.status(200).send({
       status: true,
+      message: "Success",
       data: getProduct,
     });
   } catch (err) {
@@ -446,9 +451,10 @@ async function updateProductByParam(req, res) {
           .send({ status: false, msg: "isFreeShipping must be in true/false" });
       }
       if (isFreeShipping.trim() === "true") {
-        data.isFreeShipping = true;
+        data["isFreeShipping"] = true;
+      } else {
+        data["isFreeShipping"] = false;
       }
-      data.isFreeShipping = false;
     }
 
     if (style) {
