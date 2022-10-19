@@ -15,8 +15,12 @@ const {
   deleteProduct,
 } = require("../controllers/productController");
 
-const { createCart, updateCart, getCart, deleteCart } = require("../controllers/cartController");
-
+const {
+  createCart,
+  updateCart,
+  getCart,
+  deleteCart,
+} = require("../controllers/cartController");
 
 const { createOrder, updateOrder } = require("../controllers/orderController");
 
@@ -38,9 +42,12 @@ router.put("/users/:userId/cart", authentication, updateCart);
 router.get("/users/:userId/cart", authentication, getCart);
 router.delete("/users/:userId/cart", authentication, deleteCart);
 
-
-
-router.post("/users/:userId/orders", createOrder);
-router.put("/users/:userId/orders", updateOrder);
+router.post(
+  "/users/:userId/orders",
+  authentication,
+  authorization,
+  createOrder
+);
+router.put("/users/:userId/orders", authentication, authorization, updateOrder);
 
 module.exports = router;

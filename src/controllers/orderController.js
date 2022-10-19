@@ -11,24 +11,12 @@ async function createOrder(req, res) {
     let data = req.body;
     let { cancellable, ...rest } = data;
 
-    if (userId === ":userId") {
-      return res
-        .status(400)
-        .send({ status: false, message: "userId required" });
-    }
-
-    if (!ObjectId.isValid(userId)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "required valid userId" });
-    }
-
-    if (Object.keys(rest).length > 0) {
-      return res.status(400).send({
-        status: false,
-        message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
-      });
-    }
+    // if (Object.keys(rest).length > 0) {
+    //   return res.status(400).send({
+    //     status: false,
+    //     message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
+    //   });
+    // }
 
     if (data.hasOwnProperty("cancellable")) {
       if (typeof cancellable !== "boolean") {
@@ -38,10 +26,6 @@ async function createOrder(req, res) {
         });
       }
     }
-
-    // if (userId !== req.decoded.userId) {
-    //     return res.status(401).send({ status: false, message: "not auth" });
-    // }
 
     // ------------ checking user in DB -------------
     let user_in_DB = await userModel.findById(userId);
@@ -64,7 +48,7 @@ async function createOrder(req, res) {
 
     let order_of_user = await orderModel.findOne({ userId: userId });
     if (order_of_user) {
-      if (cart_in_DB["totalQuantity"] === 0) {
+      if (cart_in_DB["totalItems"] === 0) {
         return res.status(200).send({
           status: false,
           msg: "required items in cart to place the order",
@@ -74,6 +58,10 @@ async function createOrder(req, res) {
         { userId: userId },
         cart_in_DB,
         { new: true }
+      );
+      await cartModel.findOneAndUpdate(
+        { userId: userId },
+        { items: [], totalPrice: 0, totalItems: 0 }
       );
       return res.status(200).send({
         status: true,
@@ -104,27 +92,11 @@ async function updateOrder(req, res) {
 
     let { status, ...rest } = data;
 
-    if (Object.keys(rest).length > 0) {
-      return res.status(400).send({
-        status: false,
-        message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
-      });
-    }
-
-    if (userId === ":userId") {
-      return res
-        .status(400)
-        .send({ status: false, message: "userId required" });
-    }
-
-    if (!ObjectId.isValid(userId)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "required valid userId" });
-    }
-
-    // if (userId !== req.decoded.userId) {
-    //   return res.status(401).send({ status: false, message: "not auth" });
+    // if (Object.keys(rest).length > 0) {
+    //   return res.status(400).send({
+    //     status: false,
+    //     message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
+    //   });
     // }
 
     if (Object.keys(data).length == 0) {
@@ -135,12 +107,10 @@ async function updateOrder(req, res) {
 
     let arr = ["pending", "completed", "cancled"];
     if (!arr.includes(status)) {
-      return res
-        .status(400)
-        .send({
-          status: false,
-          message: `the value status must be amoung these ${arr.join(", ")}`,
-        });
+      return res.status(400).send({
+        status: false,
+        message: `the value status must be amoung these ${arr.join(", ")}`,
+      });
     }
 
     // ------------ checking user in DB -------------
