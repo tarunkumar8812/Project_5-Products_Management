@@ -99,7 +99,7 @@ async function createCart(req, res) {
 
         //increasing totalPrice and totalItems
         cart.totalPrice += price;
-        cart.totalItems = cartQuantity.reduce((acc, cur) => acc + cur, 0); //+1
+        cart.totalItems = cart.items.lenght;
         let updateData = cart.toObject();
         //deleting unnecessary keys and there values in updateData
         delete updateData["_id"];
@@ -285,12 +285,12 @@ async function updateCart(req, res) {
 
     //Getting totalPrice and totalQuantity
     let totalPrice = finalPrices.reduce((acc, cur) => acc + cur, 0);
-    let totalQuantity = Quantity.reduce((acc, cur) => acc + cur, 0);
+    let totalItems = items.length;
 
     //updating the cart
     let updatedCart = await cartModel.findOneAndUpdate(
       { _id: data.cartId },
-      { items: items, totalPrice: totalPrice, totalItems: totalQuantity },
+      { items: items, totalPrice: totalPrice, totalItems: totalItems },
       { new: true }
     );
     return res.status(200).send({
