@@ -21,7 +21,7 @@ async function createUser(req, res) {
     //files form form data
     let files = req.files;
 
-    // console.log(files);
+    console.log(files);
 
     const {
       fname,
@@ -55,8 +55,6 @@ async function createUser(req, res) {
       "password",
       "address",
     ];
-
-
     let err = [];
     const addressFields = ["street", "city", "pincode"];
     const sb_Fields = ["shipping", "billing"];
@@ -64,7 +62,11 @@ async function createUser(req, res) {
     for (field of requiredFields) {
       //checking required fields
       if (field === "profileImage") {
-        if (files === undefined || files.length === 0) {
+        if (
+          files[0].fieldname !== "profileImage" ||
+          files === undefined ||
+          files.length === 0
+        ) {
           err.push("required profileImage as key and file as value");
         }
         continue;
@@ -98,6 +100,12 @@ async function createUser(req, res) {
               continue;
             }
             if (key === "pincode") {
+              if (typeof pObj[key] === "string") {
+                if (!isValidPincode(pObj[key].trim())) {
+                  err.push(`${key} must be in 6 digits in ${item}`);
+                }
+                continue;
+              }
               if (!isValidPincode(pObj[key])) {
                 err.push(`${key} must be in 6 digits in ${item}`);
               }
@@ -114,12 +122,30 @@ async function createUser(req, res) {
         err.push(`${field} must be in string format`);
         continue;
       }
+      if (field === "fname") {
+        if (!/^[A-Z a-z]+$/.test(data[field].trim())) {
+          err.push("value of fname must be in letters");
+          continue;
+        }
+        if (data[field].trim().length === 1) {
+          err.push("value of fname must contain more then 1 letter");
+        }
+      }
+      if (field === "lname") {
+        if (!/^[A-Z a-z]+$/.test(data[field].trim())) {
+          err.push("value of lname must be in letters");
+          continue;
+        }
+        if (data[field].trim().length === 1) {
+          err.push("value of lname must contain more then 1 letter");
+        }
+      }
       if (field === "password") {
-        if (!isValidPass(data[field]))
+        if (!isValidPass(data[field].trim()))
           err.push(
             "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 15 characters)"
           );
-        bcrypt.hash(data[field], 5, function (err, hash) {
+        bcrypt.hash(data[field].trim(), 5, function (err, hash) {
           // Store hash in your password DB.
           if (err) {
             err.push(err.message);
@@ -138,13 +164,13 @@ async function createUser(req, res) {
         continue;
       }
       if (uni === "email") {
-        if (!isValidEmail(data[uni])) {
+        if (!isValidEmail(data[uni].trim())) {
           err.push(`invalid ${uni}`);
           continue;
         }
       }
       if (uni === "phone") {
-        if (!isValidPhn(data[uni])) {
+        if (!isValidPhn(data[uni].trim())) {
           err.push(
             `invalid ${uni} number(Indian phone number starts with 6/7/8/9)`
           );
@@ -234,45 +260,48 @@ const login = async function (req, res) {
         .send({ status: false, message: `${validPW_4_Login(password)}` });
 
     // --------- checking creadentials in DB -------------
-    let user_in_DB = await userModel.findOne({ email });
+    let user_in_DB = await userModel.findOne({ email: email.trim() });
     if (!user_in_DB)
       return res.status(401).send({
         status: false,
         message: "invalid credentials (email or the password is incorrect)",
       });
 
-    bcrypt.compare(password, user_in_DB.password, function (err, result) {
-      if (result !== true) {
-        return res
-          .status(401)
-          .send({ success: false, message: "incorrect password" });
-      } else {
+    bcrypt.compare(
+      password.trim(),
+      user_in_DB.password,
+      function (err, result) {
+        if (result !== true) {
+          return res
+            .status(401)
+            .send({ success: false, message: "incorrect password" });
+        } else {
+          // ---------- creating JWT Token ------------
 
-        // ---------- creating JWT Token ------------
+          let token = jwt.sign(
+            {
+              userId: user_in_DB._id.toString(),
+              exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // After 24 hour it will expire
+              iat: Math.floor(Date.now() / 1000),
+            },
+            "FunctionUp Group No 23"
+          );
 
-        let token = jwt.sign(
-          {
+          res.setHeader("x-api-key", token);
+
+          let data = {
+            token: token,
             userId: user_in_DB._id.toString(),
-            exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // After 24 hour it will expire
-            iat: Math.floor(Date.now() / 1000),
-          },
-          "FunctionUp Group No 23"
-        );
+          };
 
-        res.setHeader("x-api-key", token);
-
-        let data = {
-          token: token,
-          userId: user_in_DB._id.toString(),
-        };
-
-        return res.status(200).send({
-          status: true,
-          message: "User login successfull",
-          data: data,
-        });
+          return res.status(200).send({
+            status: true,
+            message: "User login successfull",
+            data: data,
+          });
+        }
       }
-    });
+    );
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
@@ -301,9 +330,7 @@ const getUser = async function (req, res) {
         .status(200)
         .send({ status: true, message: "User profile details", data: getUser });
     }
-
     return res.status(403).send({ status: false, message: "not auth" });
-
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
@@ -345,7 +372,9 @@ const userUpdate = async function (req, res) {
     if (Object.keys(body).includes(field)) {
       if (
         field === "profileImage" &&
-        (files === undefined || files.length === 0)
+        (files[0].fieldname !== "profileImage" ||
+          files === undefined ||
+          files.length === 0)
       ) {
         return res
           .status(400)
@@ -365,7 +394,7 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, message: "Please Enter The Valid fname" });
     }
-    if (!/^[A-Z a-z]+$/.test(fname)) {
+    if (!/^[A-Z a-z]+$/.test(fname.trim())) {
       return res
         .status(400)
         .send({ status: false, message: "value of fname must be in letters" });
@@ -384,7 +413,7 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, message: "Please Enter The Valid Lname" });
     }
-    if (!/^[A-Z a-z]+$/.test(lname)) {
+    if (!/^[A-Z a-z]+$/.test(lname.trim())) {
       return res
         .status(400)
         .send({ status: false, message: "value of fname must be in letters" });
@@ -403,7 +432,7 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, message: "email must be in string format" });
     }
-    if (!isValidEmail(email)) {
+    if (!isValidEmail(email.trim())) {
       return res
         .status(400)
         .send({ status: false, message: "Please Enter The Valid email" });
@@ -412,14 +441,16 @@ const userUpdate = async function (req, res) {
 
   if (phone) {
     if (!isValidString(phone)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "phone number must be in string format" });
+      return res.status(400).send({
+        status: false,
+        message: "phone number must be in string format",
+      });
     }
-    if (!isValidPhn(phone)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "Please Enter The Valid Phone number  " });
+    if (!isValidPhn(phone.trim())) {
+      return res.status(400).send({
+        status: false,
+        message: "Please Enter The Valid Phone number  ",
+      });
     }
   }
 
@@ -429,19 +460,20 @@ const userUpdate = async function (req, res) {
         .status(400)
         .send({ status: false, message: "password must be in string format" });
     }
-    if (!isValidPass(password)) {
+    if (!isValidPass(password.trim())) {
       return res.status(400).send({
         status: false,
-        message: "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)",
+        message:
+          "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)",
       });
     }
-    const encryptPassword = await bcrypt.hash(password, 5);
+    const encryptPassword = await bcrypt.hash(password.trim(), 5);
     body.password = encryptPassword;
   }
 
   let obj = { fname, lname, email, phone, password };
 
-  // --------- validation of files ( ProfileImage ) ---------
+  //checking file is there or not , as files comes in array
   if (files && files.length > 0) {
     if (
       !(
@@ -459,14 +491,11 @@ const userUpdate = async function (req, res) {
 
     obj.profileImage = uploadedFileURL;
   }
-  
-// ------------------ validaton of address ------------------
+
   if (address) {
     address = JSON.parse(address);
     let { shipping, billing } = address;
     let arr = [shipping, billing];
-
-// ----- running loop for billing/shipping address -----
     for (field of arr) {
       if (field) {
         let { street, city, pincode } = field;
@@ -478,8 +507,6 @@ const userUpdate = async function (req, res) {
               .send({ status: false, message: `required value of ${key}` });
           }
         }
-
-// ------------ validaton of street ------------
         if (street) {
           if (!isValidString(street)) {
             return res.status(400).send({
@@ -494,13 +521,12 @@ const userUpdate = async function (req, res) {
             obj["address.billing.street"] = field.street;
           }
         }
-
-// ------------ validaton of city ------------
         if (city) {
           if (!isValidString(city)) {
-            return res
-              .status(400)
-              .send({ status: false, message: "city value must in string format" });
+            return res.status(400).send({
+              status: false,
+              message: "city value must in string format",
+            });
           }
           if (field == shipping) {
             obj["address.shipping.city"] = field.city;
@@ -509,13 +535,22 @@ const userUpdate = async function (req, res) {
             obj["address.billing.city"] = field.city;
           }
         }
-
-// ------------ validaton of pincode ------------
         if (pincode) {
-          if (!isValidPincode(pincode)) {
-            return res
-              .status(400)
-              .send({ status: false, message: "pincode must be 6 digit number" });
+          if (typeof pincode === "string") {
+            if (!isValidPincode(pincode.trim())) {
+              return res.status(400).send({
+                status: false,
+                message: "pincode must be 6 digit number",
+              });
+            }
+          }
+          if (typeof pincode === "number") {
+            if (!isValidPincode(pincode)) {
+              return res.status(400).send({
+                status: false,
+                message: "pincode must be 6 digit number",
+              });
+            }
           }
           if (field == shipping) {
             obj["address.shipping.pincode"] = field.pincode;
@@ -528,8 +563,6 @@ const userUpdate = async function (req, res) {
     }
   }
 
-
-// ------- checking uniqueness of phone and email -------
   let unique = ["email", "phone"];
   for (field of unique) {
     let emp = {};
@@ -542,7 +575,6 @@ const userUpdate = async function (req, res) {
     }
   }
 
-// ----------------- updating data in DB -----------------
   let updation = await userModel.findByIdAndUpdate({ _id: userid }, obj, {
     new: true,
   });
