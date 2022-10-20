@@ -108,9 +108,10 @@ const createProduct = async function (req, res) {
 
     if (isFreeShipping) {
       if (!["true", "false"].includes(isFreeShipping.trim())) {
-        return res
-          .status(400)
-          .send({ status: false, message: "isFreeShipping must be in true/false" });
+        return res.status(400).send({
+          status: false,
+          message: "isFreeShipping must be in true/false",
+        });
       }
       if (isFreeShipping.trim() === "true") {
         data.isFreeShipping = true;
@@ -248,8 +249,15 @@ async function getProduct(req, res) {
           }
         }
         obj.availableSizes = { $in: sizes };
+      } else {
+        if (!listOfSizes.includes(size.trim().toUpperCase())) {
+          return res.status(400).send({
+            status: false,
+            message: `Sizes must be in ${listOfSizes.join(", ")}`,
+          });
+        }
+        obj.availableSizes = { $in: size.trim().toUpperCase() };
       }
-      obj.availableSizes = { $in: size.trim().toUpperCase() };
     }
 
     //checking name
@@ -265,12 +273,10 @@ async function getProduct(req, res) {
     //checking priceGreaterThan
     if (priceGreaterThan) {
       if (!isValidPrice(priceGreaterThan.trim())) {
-        return res
-          .status(400)
-          .send({
-            status: false,
-            message: "priceGreaterThan must be in positive number",
-          });
+        return res.status(400).send({
+          status: false,
+          message: "priceGreaterThan must be in positive number",
+        });
       }
       obj.price = { $gte: priceGreaterThan };
     }
@@ -278,12 +284,10 @@ async function getProduct(req, res) {
     //checking priceLessThan
     if (priceLessThan) {
       if (!isValidPrice(priceLessThan.trim())) {
-        return res
-          .status(400)
-          .send({
-            status: false,
-            message: "priceLessThan must be in positive number",
-          });
+        return res.status(400).send({
+          status: false,
+          message: "priceLessThan must be in positive number",
+        });
       }
       obj.price = { $lte: priceLessThan };
     }
@@ -319,7 +323,9 @@ async function getProduct(req, res) {
     //to find products
     let getProduct = await productModel.find(obj);
     if (getProduct.length === 0) {
-      return res.status(404).send({ status: false, message: "products not found" });
+      return res
+        .status(404)
+        .send({ status: false, message: "products not found" });
     }
     return res.status(200).send({
       status: true,
@@ -350,7 +356,9 @@ async function getProductByParam(req, res) {
       isDeleted: false,
     });
     if (!check) {
-      return res.status(404).send({ status: false, message: "product not found" });
+      return res
+        .status(404)
+        .send({ status: false, message: "product not found" });
     }
     return res.status(200).send({ status: true, data: check });
   } catch (err) {
@@ -457,9 +465,10 @@ async function updateProductByParam(req, res) {
 
     if (isFreeShipping) {
       if (!["true", "false"].includes(isFreeShipping.trim())) {
-        return res
-          .status(400)
-          .send({ status: false, message: "isFreeShipping must be in true/false" });
+        return res.status(400).send({
+          status: false,
+          message: "isFreeShipping must be in true/false",
+        });
       }
       if (isFreeShipping.trim() === "true") {
         data["isFreeShipping"] = true;
@@ -474,20 +483,6 @@ async function updateProductByParam(req, res) {
           .status(400)
           .send({ status: false, message: "style must be in string" });
       }
-    }
-
-    if (availableSizes) {
-      let arr = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-      let sizes = availableSizes.split(",").map((x) => x.toUpperCase());
-      for (field of sizes) {
-        if (!arr.includes(field)) {
-          return res.status(400).send({
-            status: false,
-            message: `availableSizes must be in ${arr.join(", ")}`,
-          });
-        }
-      }
-      data.availableSizes = sizes;
     }
 
     if (installments) {
@@ -523,6 +518,27 @@ async function updateProductByParam(req, res) {
         .send({ status: false, message: "product not founded" });
     }
 
+    if (availableSizes) {
+      let arr = ["S", "XS", "M", "X", "L", "XXL", "XL"];
+      let sizes = availableSizes.split(",").map((x) => x.trim().toUpperCase());
+      for (field of sizes) {
+        if (!arr.includes(field)) {
+          return res.status(400).send({
+            status: false,
+            message: `availableSizes must be in ${arr.join(", ")}`,
+          });
+        }
+      }
+      for (field of sizes) {
+        if (check.availableSizes.includes(field)) {
+          check.availableSizes.splice(check.availableSizes.indexOf(field), 1);
+          data.availableSizes = check.availableSizes;
+        } else {
+          check.availableSizes.push(field);
+          data.availableSizes = check.availableSizes;
+        }
+      }
+    }
     // console.log(files);
 
     //checking file is there or not , as files comes in array
@@ -597,10 +613,14 @@ async function deleteProduct(req, res) {
       }
     );
     if (!deleteProduct) {
-      return res.status(404).send({ status: false, message: "product not found" });
+      return res
+        .status(404)
+        .send({ status: false, message: "product not found" });
     }
 
-    return res.status(200).send({ status: true, message: "deleted succefully" });
+    return res
+      .status(200)
+      .send({ status: true, message: "deleted succefully" });
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }

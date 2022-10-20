@@ -39,9 +39,10 @@ async function createCart(req, res) {
 
     if (cartId) {
       if (!isValidString(cartId)) {
-        return res
-          .status(400)
-          .send({ status: false, message: "the value of cartId must be string" });
+        return res.status(400).send({
+          status: false,
+          message: "the value of cartId must be string",
+        });
       }
       if (!ObjectId.isValid(cartId.trim())) {
         return res
@@ -51,9 +52,10 @@ async function createCart(req, res) {
     }
 
     if (!isValidString(productId)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "the value of productId must be string" });
+      return res.status(400).send({
+        status: false,
+        message: "the value of productId must be string",
+      });
     }
     if (!ObjectId.isValid(productId.trim())) {
       return res
@@ -90,11 +92,15 @@ async function createCart(req, res) {
     if (cartOfUser) {
       if (cartId) {
         //checking cartId exist in cart collection are not
-        let cart = await cartModel.findOne({ _id: cartId.trim() });
+        let cart = await cartModel.findOne({
+          _id: cartId.trim(),
+          userId: userId,
+        });
         if (!cart) {
-          return res
-            .status(404)
-            .send({ status: false, message: "cart not found" });
+          return res.status(404).send({
+            status: false,
+            message: `cart not found with given userID and cartId combination, In place of cartId value use these cartId:-${cartOfUser._id}`,
+          });
         }
 
         //Getting all the productIds in a cart to a variable as an array
@@ -127,7 +133,7 @@ async function createCart(req, res) {
         delete updateData["_id"];
         delete updateData["userId"];
         let upCart = await cartModel.findOneAndUpdate(
-          { userId: userId },
+          { _id: cartId.trim(), userId: userId },
           updateData,
           { new: true }
         );
@@ -207,9 +213,10 @@ async function updateCart(req, res) {
     }
 
     if (!isValidString(productId)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "the value of productId must be string" });
+      return res.status(400).send({
+        status: false,
+        message: "the value of productId must be string",
+      });
     }
     if (!ObjectId.isValid(productId.trim())) {
       return res
@@ -233,11 +240,16 @@ async function updateCart(req, res) {
     }
 
     //checking cart in DB
-    let cart = await cartModel.findOne({ _id: data.cartId.trim() }).lean();
+    let cart = await cartModel
+      .findOne({ _id: data.cartId.trim(), userId: userId })
+      .lean();
     if (!cart) {
       return res
         .status(404)
-        .send({ status: false, message: "cart not not found" });
+        .send({
+          status: false,
+          message: "cart not found with given userID and cartId combination",
+        });
     }
 
     //Getting all the productIds in a cart to a variable as an array
@@ -271,7 +283,7 @@ async function updateCart(req, res) {
             (x) => x.productId.toString() !== data.productId.trim()
           );
           let updatedCart = await cartModel.findOneAndUpdate(
-            { _id: data.cartId.trim() },
+            { _id: data.cartId.trim(), userId: userId },
             {
               items: items,
               totalPrice: cart.totalPrice,
@@ -289,7 +301,7 @@ async function updateCart(req, res) {
 
       //updation of cart
       let updatedCart = await cartModel.findOneAndUpdate(
-        { _id: data.cartId.trim() },
+        { _id: data.cartId.trim(), userId: userId },
         {
           items: cart.items,
           totalPrice: cart.totalPrice,
@@ -334,7 +346,7 @@ async function updateCart(req, res) {
 
     //updating the cart
     let updatedCart = await cartModel.findOneAndUpdate(
-      { _id: data.cartId.trim() },
+      { _id: data.cartId.trim(), userId: userId },
       { items: items, totalPrice: totalPrice, totalItems: totalItems },
       { new: true }
     );

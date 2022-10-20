@@ -139,6 +139,7 @@ async function updateOrder(req, res) {
         );
         return res.status(200).send({
           status: true,
+          message: "Success",
           data: updatedOrder,
         });
       }
@@ -154,6 +155,7 @@ async function updateOrder(req, res) {
     );
     return res.status(200).send({
       status: true,
+      message: "Success",
       data: updatedOrder,
     });
   } catch (err) {
