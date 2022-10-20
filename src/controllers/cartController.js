@@ -314,7 +314,7 @@ async function updateCart(req, res) {
         message: "Success",
         data: updatedCart,
       });
-    }
+    }  
 
     //If removeProduct===0 we have to remove the product from the items
 
@@ -451,7 +451,6 @@ async function deleteCart(req, res) {
       return res.status(404).send({ status: false, message: "cart not found" });
     }
 
-    // ------- doubt 204 status code use case -----------
     return res.status(204).send({
       status: true,
       data: cart_in_DB,

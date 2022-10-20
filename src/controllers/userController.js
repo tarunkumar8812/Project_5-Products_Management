@@ -378,7 +378,10 @@ const userUpdate = async function (req, res) {
       ) {
         return res
           .status(400)
-          .send({ status: false, message: "required profileImage file" });
+          .send({
+            status: false,
+            message: "required profileImage as key and file as value",
+          });
       }
       if (body[field].trim() === "") {
         return res
