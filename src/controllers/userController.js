@@ -55,6 +55,8 @@ async function createUser(req, res) {
       "password",
       "address",
     ];
+
+
     let err = [];
     const addressFields = ["street", "city", "pincode"];
     const sb_Fields = ["shipping", "billing"];
@@ -245,6 +247,7 @@ const login = async function (req, res) {
           .status(401)
           .send({ success: false, message: "incorrect password" });
       } else {
+
         // ---------- creating JWT Token ------------
 
         let token = jwt.sign(
@@ -298,7 +301,9 @@ const getUser = async function (req, res) {
         .status(200)
         .send({ status: true, message: "User profile details", data: getUser });
     }
+
     return res.status(403).send({ status: false, message: "not auth" });
+
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
@@ -436,7 +441,7 @@ const userUpdate = async function (req, res) {
 
   let obj = { fname, lname, email, phone, password };
 
-  //checking file is there or not , as files comes in array
+  // --------- validation of files ( ProfileImage ) ---------
   if (files && files.length > 0) {
     if (
       !(
@@ -454,11 +459,14 @@ const userUpdate = async function (req, res) {
 
     obj.profileImage = uploadedFileURL;
   }
-
+  
+// ------------------ validaton of address ------------------
   if (address) {
     address = JSON.parse(address);
     let { shipping, billing } = address;
     let arr = [shipping, billing];
+
+// ----- running loop for billing/shipping address -----
     for (field of arr) {
       if (field) {
         let { street, city, pincode } = field;
@@ -470,6 +478,8 @@ const userUpdate = async function (req, res) {
               .send({ status: false, message: `required value of ${key}` });
           }
         }
+
+// ------------ validaton of street ------------
         if (street) {
           if (!isValidString(street)) {
             return res.status(400).send({
@@ -484,6 +494,8 @@ const userUpdate = async function (req, res) {
             obj["address.billing.street"] = field.street;
           }
         }
+
+// ------------ validaton of city ------------
         if (city) {
           if (!isValidString(city)) {
             return res
@@ -497,6 +509,8 @@ const userUpdate = async function (req, res) {
             obj["address.billing.city"] = field.city;
           }
         }
+
+// ------------ validaton of pincode ------------
         if (pincode) {
           if (!isValidPincode(pincode)) {
             return res
@@ -514,6 +528,8 @@ const userUpdate = async function (req, res) {
     }
   }
 
+
+// ------- checking uniqueness of phone and email -------
   let unique = ["email", "phone"];
   for (field of unique) {
     let emp = {};
@@ -526,6 +542,7 @@ const userUpdate = async function (req, res) {
     }
   }
 
+// ----------------- updating data in DB -----------------
   let updation = await userModel.findByIdAndUpdate({ _id: userid }, obj, {
     new: true,
   });

@@ -5,13 +5,14 @@ aws.config.update({
   secretAccessKey: "9f+YFBVcSjZWM6DG9R4TUN8k8TGe4X+lXmO4jPiU",
   region: "ap-south-1",
 });
+
 let uploadFile = async (file) => {
   return new Promise(function (resolve, reject) {
     // this function will upload file to aws and return the link
 
     let s3 = new aws.S3({ apiVersion: "2006-03-01" }); // we will be using the s3 service of aws
 
-    var uploadParams = {
+    let uploadParams = {
       ACL: "public-read",
       Bucket: "classroom-training-bucket", //HERE
       Key: "abc/" + file.originalname, //HERE
@@ -22,7 +23,6 @@ let uploadFile = async (file) => {
       if (err) {
         return reject({ error: err });
       }
-      // console.log(data);
       console.log("file uploaded succesfully");
       return resolve(data.Location);
     });
