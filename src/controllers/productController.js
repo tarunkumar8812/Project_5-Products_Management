@@ -159,10 +159,13 @@ const createProduct = async function (req, res) {
         .send({ status: false, message: "title is already exists" });
     }
 
-    if (files.length === 0) {
+    if (files.length === 0 || files[0].fieldname !== "productImage") {
       return res
         .status(400)
-        .send({ status: false, message: "required productImage file" });
+        .send({
+          status: false,
+          message: "required productImage as key and file as value",
+        });
     }
 
     if (
