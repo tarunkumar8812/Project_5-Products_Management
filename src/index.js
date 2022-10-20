@@ -30,7 +30,7 @@ app.use(
 
 app.use("/", router);
 
-// app.use("/*", (req, res) => res.status(404).send({ status: false, message: "invalid Path url" }));
+app.use("/*", (req, res) => res.status(404).send({ status: false, message: "invalid Path url" }));
 
 
 app.listen(process.env.PORT || 3000, function () {
