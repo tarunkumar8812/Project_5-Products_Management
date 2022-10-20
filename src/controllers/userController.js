@@ -60,6 +60,7 @@ async function createUser(req, res) {
     const sb_Fields = ["shipping", "billing"];
     const unique = ["email", "phone"];
     for (field of requiredFields) {
+      //checking required fields
       if (field === "profileImage") {
         if (files === undefined || files.length === 0) {
           err.push("required profileImage as key and file as value");
@@ -70,10 +71,12 @@ async function createUser(req, res) {
         err.push(`${field} key is required in request body`);
         continue;
       }
+      //checking for valuse of the keys are given or not
       if (data[field].trim() === "") {
         err.push(`required value of the ${field}`);
         continue;
       }
+      // checking required fields in address
       if (field === "address") {
         data.address = JSON.parse(data.address);
         if (typeof data[field] !== "object") {
@@ -123,6 +126,8 @@ async function createUser(req, res) {
         });
       }
     }
+
+    //checking uniqueness of email and phone
     for (uni of unique) {
       if (!Object.keys(data).includes(uni)) {
         continue;
@@ -138,7 +143,9 @@ async function createUser(req, res) {
       }
       if (uni === "phone") {
         if (!isValidPhn(data[uni])) {
-          err.push(`invalid ${uni} number`);
+          err.push(
+            `invalid ${uni} number(Indian phone number starts with 6/7/8/9)`
+          );
           continue;
         }
       }
@@ -161,6 +168,7 @@ async function createUser(req, res) {
 
     //checking file is there or not , as files comes in array
     if (files && files.length > 0) {
+      //checking file type
       if (
         !(
           files[0].mimetype == "image/png" ||
@@ -173,14 +181,16 @@ async function createUser(req, res) {
           message: "Only .png, .jpg and .jpeg format allowed!",
         });
       }
-      let uploadedFileURL = await uploadFile(files[0]);
 
+      // Uploading image to S3 bucket and save it's public url in user document.
+      let uploadedFileURL = await uploadFile(files[0]);
       data.profileImage = uploadedFileURL;
 
       //creating user
       let createUserData = await userModel.create(data);
       return res.status(201).send({
         status: true,
+        message: "User created successfully",
         data: createUserData,
       });
     }
@@ -255,7 +265,7 @@ const login = async function (req, res) {
 
         return res.status(200).send({
           status: true,
-          message: "Token has been successfully generated.",
+          message: "User login successfull",
           data: data,
         });
       }
@@ -288,7 +298,7 @@ const getUser = async function (req, res) {
         .status(200)
         .send({ status: true, message: "User profile details", data: getUser });
     }
-    return res.status(401).send({ status: false, message: "not auth" });
+    return res.status(403).send({ status: false, message: "not auth" });
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
@@ -307,7 +317,7 @@ const userUpdate = async function (req, res) {
   if (Object.keys(body).length == 0 && files === undefined) {
     return res.status(400).send({
       status: false,
-      msg: "for updation atleast one key value pair is required",
+      message: "for updation atleast one key value pair is required",
     });
   }
 
@@ -334,12 +344,12 @@ const userUpdate = async function (req, res) {
       ) {
         return res
           .status(400)
-          .send({ status: false, msg: "required profileImage file" });
+          .send({ status: false, message: "required profileImage file" });
       }
       if (body[field].trim() === "") {
         return res
           .status(400)
-          .send({ status: false, msg: `required value of the ${field}` });
+          .send({ status: false, message: `required value of the ${field}` });
       }
     }
   }
@@ -348,17 +358,17 @@ const userUpdate = async function (req, res) {
     if (!isValidString(fname)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid fname" });
+        .send({ status: false, message: "Please Enter The Valid fname" });
     }
     if (!/^[A-Z a-z]+$/.test(fname)) {
       return res
         .status(400)
-        .send({ status: false, msg: "value of fname must be in letters" });
+        .send({ status: false, message: "value of fname must be in letters" });
     }
     if (fname.trim().length === 1) {
       return res.status(400).send({
         status: false,
-        msg: "value of fname must contain more then 1 letter",
+        message: "value of fname must contain more then 1 letter",
       });
     }
   }
@@ -367,17 +377,17 @@ const userUpdate = async function (req, res) {
     if (!isValidString(lname)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid Lname" });
+        .send({ status: false, message: "Please Enter The Valid Lname" });
     }
     if (!/^[A-Z a-z]+$/.test(lname)) {
       return res
         .status(400)
-        .send({ status: false, msg: "value of fname must be in letters" });
+        .send({ status: false, message: "value of fname must be in letters" });
     }
     if (lname.trim().length === 1) {
       return res.status(400).send({
         status: false,
-        msg: "value of lname must contain more then 1 letter",
+        message: "value of lname must contain more then 1 letter",
       });
     }
   }
@@ -386,12 +396,12 @@ const userUpdate = async function (req, res) {
     if (!isValidString(email)) {
       return res
         .status(400)
-        .send({ status: false, msg: "email must be in string format" });
+        .send({ status: false, message: "email must be in string format" });
     }
     if (!isValidEmail(email)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid email" });
+        .send({ status: false, message: "Please Enter The Valid email" });
     }
   }
 
@@ -399,12 +409,12 @@ const userUpdate = async function (req, res) {
     if (!isValidString(phone)) {
       return res
         .status(400)
-        .send({ status: false, msg: "phone number must be in string format" });
+        .send({ status: false, message: "phone number must be in string format" });
     }
     if (!isValidPhn(phone)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter The Valid Phone number  " });
+        .send({ status: false, message: "Please Enter The Valid Phone number  " });
     }
   }
 
@@ -412,12 +422,12 @@ const userUpdate = async function (req, res) {
     if (!isValidString(password)) {
       return res
         .status(400)
-        .send({ status: false, msg: "password must be in string format" });
+        .send({ status: false, message: "password must be in string format" });
     }
     if (!isValidPass(password)) {
       return res.status(400).send({
         status: false,
-        msg: "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)",
+        message: "password should contain at least (1 lowercase, uppercase ,numeric alphabetical character and at least one special character and also The string must be  between 8 characters to 16 characters)",
       });
     }
     const encryptPassword = await bcrypt.hash(password, 5);
@@ -457,14 +467,14 @@ const userUpdate = async function (req, res) {
           if (field[key] === "") {
             return res
               .status(400)
-              .send({ status: false, msg: `required value of ${key}` });
+              .send({ status: false, message: `required value of ${key}` });
           }
         }
         if (street) {
           if (!isValidString(street)) {
             return res.status(400).send({
               status: false,
-              msg: "Street value must in string format",
+              message: "Street value must in string format",
             });
           }
           if (field == shipping) {
@@ -478,7 +488,7 @@ const userUpdate = async function (req, res) {
           if (!isValidString(city)) {
             return res
               .status(400)
-              .send({ status: false, msg: "city value must in string format" });
+              .send({ status: false, message: "city value must in string format" });
           }
           if (field == shipping) {
             obj["address.shipping.city"] = field.city;
@@ -491,7 +501,7 @@ const userUpdate = async function (req, res) {
           if (!isValidPincode(pincode)) {
             return res
               .status(400)
-              .send({ status: false, msg: "Please Enter The Valid pincode" });
+              .send({ status: false, message: "pincode must be 6 digit number" });
           }
           if (field == shipping) {
             obj["address.shipping.pincode"] = field.pincode;
@@ -512,7 +522,7 @@ const userUpdate = async function (req, res) {
     if (doc) {
       return res
         .status(409)
-        .send({ status: false, msg: `${field} is already exists` });
+        .send({ status: false, message: `${field} is already exists` });
     }
   }
 
@@ -520,7 +530,9 @@ const userUpdate = async function (req, res) {
     new: true,
   });
 
-  return res.status(200).send({ status: true, Data: updation });
+  return res
+    .status(200)
+    .send({ status: true, message: "User profile updated", Data: updation });
 };
 
 module.exports = { createUser, login, getUser, userUpdate };

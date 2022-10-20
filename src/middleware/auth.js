@@ -34,7 +34,7 @@ async function authorization(req, res, next) {
     if (!ObjectId.isValid(userId)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter Valid userID" });
+        .send({ status: false, message: "Please Enter Valid userID" });
     }
     const getUser = await userModel.findById(userId);
     if (!getUser) {

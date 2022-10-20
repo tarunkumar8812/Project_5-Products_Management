@@ -44,9 +44,9 @@ async function createOrder(req, res) {
     let order_of_user = await orderModel.findOne({ userId: userId });
     if (order_of_user) {
       if (cart_in_DB["totalItems"] === 0) {
-        return res.status(200).send({
+        return res.status(400).send({
           status: false,
-          msg: "required items in cart to place the order",
+          message: "required items in cart to place the order",
         });
       }
       let updateOrder = await orderModel.findOneAndUpdate(
@@ -60,6 +60,7 @@ async function createOrder(req, res) {
       );
       return res.status(200).send({
         status: true,
+        message: "Success",
         data: updateOrder,
       });
     }
@@ -71,6 +72,7 @@ async function createOrder(req, res) {
     );
     return res.status(201).send({
       status: true,
+      message: "Success",
       data: orderDetails,
     });
   } catch (err) {
@@ -100,8 +102,8 @@ async function updateOrder(req, res) {
         .send({ status: false, message: "Please fill data in body" });
     }
 
-    let arr = ["pending", "completed", "cancled"];
-    if (!arr.includes(status)) {
+    let arr = ["pending", "completed", "cancelled"];
+    if (!arr.includes(status.trim())) {
       return res.status(400).send({
         status: false,
         message: `the value status must be amoung these ${arr.join(", ")}`,
@@ -118,14 +120,21 @@ async function updateOrder(req, res) {
     if (!order_of_user) {
       return res.status(400).send({
         status: false,
-        msg: "there is no order for given userId",
+        message: "there is no order for given userId",
       });
     }
-    if (status === "cancled") {
+
+    if(order_of_user.status==="completed"||order_of_user.status==="cancelled"){
+      return res.status(400).send({
+        status: false,
+        message: `the order is already ${order_of_user.status}`,
+      });
+    }
+    if (status === "cancelled") {
       if (order_of_user.cancellable === true) {
         let updatedOrder = await orderModel.findOneAndUpdate(
           { userId: userId },
-          { status: "cancled" },
+          { status: "cancelled" },
           { new: true }
         );
         return res.status(200).send({
@@ -135,7 +144,7 @@ async function updateOrder(req, res) {
       }
       return res.status(400).send({
         status: false,
-        msg: "these order is not cancellable",
+        message: "these order is not cancellable",
       });
     }
     let updatedOrder = await orderModel.findOneAndUpdate(

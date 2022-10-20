@@ -3,31 +3,32 @@ const userSchema = new mongoose.Schema(
   {
     fname: {
       type: String,
-      required: true
+      required: true,
     },
     lname: {
       type: String,
-      required: true
+      required: true,
     },
     email: {
       type: String,
       required: true,
-      unique: true
+      lowercase: true,
+      unique: true,
     },
     profileImage: {
       type: String,
-      required: true
+      required: true,
     }, // s3 link
     phone: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
     },
     password: {
       type: String,
       required: true,
-      max:15,
-      min:8
+      max: 15,
+      min: 8,
     }, // encrypted password
     address: {
       shipping: {

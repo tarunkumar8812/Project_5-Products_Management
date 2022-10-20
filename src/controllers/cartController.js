@@ -41,9 +41,9 @@ async function createCart(req, res) {
       if (!isValidString(cartId)) {
         return res
           .status(400)
-          .send({ status: false, msg: "the value of cartId must be string" });
+          .send({ status: false, message: "the value of cartId must be string" });
       }
-      if (!ObjectId.isValid(cartId)) {
+      if (!ObjectId.isValid(cartId.trim())) {
         return res
           .status(400)
           .send({ status: false, message: "required valid cartId" });
@@ -53,9 +53,9 @@ async function createCart(req, res) {
     if (!isValidString(productId)) {
       return res
         .status(400)
-        .send({ status: false, msg: "the value of productId must be string" });
+        .send({ status: false, message: "the value of productId must be string" });
     }
-    if (!ObjectId.isValid(productId)) {
+    if (!ObjectId.isValid(productId.trim())) {
       return res
         .status(400)
         .send({ status: false, message: "required valid productId" });
@@ -69,7 +69,7 @@ async function createCart(req, res) {
 
     //checking product in DB
     let product = await productModel.findOne({
-      _id: productId,
+      _id: productId.trim(),
       isDeleted: false,
     });
     if (!product) {
@@ -90,7 +90,7 @@ async function createCart(req, res) {
     if (cartOfUser) {
       if (cartId) {
         //checking cartId exist in cart collection are not
-        let cart = await cartModel.findOne({ _id: cartId });
+        let cart = await cartModel.findOne({ _id: cartId.trim() });
         if (!cart) {
           return res
             .status(404)
@@ -99,22 +99,22 @@ async function createCart(req, res) {
 
         //Getting all the productIds in a cart to a variable as an array
         let proIdsInCart = cart.items.map((x) => x.productId.toString());
-        //If the items lenght is 0, we have push the products with out checking
-        if (proIdsInCart.length === 0) {
-          let items = {};
-          items.productId = productId;
-          items.quantity = 1;
-          cart.items.push(items);
-        }
         for (let i = 0; i < proIdsInCart.length; i++) {
-          if (proIdsInCart[i] === productId) {
+          if (proIdsInCart[i] === productId.trim()) {
             //If productId is already present in cart, just increase the quantity
             cart.items[i].quantity += 1;
           }
         }
-        if (!proIdsInCart.includes(productId)) {
+        if (!proIdsInCart.includes(productId.trim())) {
           let items = {};
-          items.productId = productId;
+          items.productId = productId.trim();
+          items.quantity = 1;
+          cart.items.push(items);
+        }
+        //If the items lenght is 0, we have push the products with out checking
+        if (cart.items.length === 0) {
+          let items = {};
+          items.productId = productId.trim();
           items.quantity = 1;
           cart.items.push(items);
         }
@@ -131,9 +131,12 @@ async function createCart(req, res) {
           updateData,
           { new: true }
         );
+        let Doc = upCart.toObject();
+        Doc.items.forEach((x) => delete x._id);
         return res.status(200).send({
           status: true,
-          data: upCart,
+          message: "Success",
+          data: Doc,
         });
       }
       return res.status(400).send({
@@ -144,7 +147,7 @@ async function createCart(req, res) {
 
     //Creating an empty object and adding the product for the first time
     let items = {};
-    items.productId = productId;
+    items.productId = productId.trim();
     items.quantity = 1;
 
     //Adding necessary keys and values in in data for creating cart for first time
@@ -154,9 +157,12 @@ async function createCart(req, res) {
     data.totalItems = 1;
 
     let cartDoc = await cartModel.create(data);
+    let Doc = cartDoc.toObject();
+    Doc.items.forEach((x) => delete x._id);
     return res.status(201).send({
       status: true,
-      data: cartDoc,
+      message: "Success",
+      data: Doc,
     });
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
@@ -192,9 +198,9 @@ async function updateCart(req, res) {
     if (!isValidString(cartId)) {
       return res
         .status(400)
-        .send({ status: false, msg: "the value of cartId must be string" });
+        .send({ status: false, message: "the value of cartId must be string" });
     }
-    if (!ObjectId.isValid(cartId)) {
+    if (!ObjectId.isValid(cartId.trim())) {
       return res
         .status(400)
         .send({ status: false, message: "required valid cartId" });
@@ -203,9 +209,9 @@ async function updateCart(req, res) {
     if (!isValidString(productId)) {
       return res
         .status(400)
-        .send({ status: false, msg: "the value of productId must be string" });
+        .send({ status: false, message: "the value of productId must be string" });
     }
-    if (!ObjectId.isValid(productId)) {
+    if (!ObjectId.isValid(productId.trim())) {
       return res
         .status(400)
         .send({ status: false, message: "required valid productId" });
@@ -223,11 +229,11 @@ async function updateCart(req, res) {
     }
 
     if (userId !== req.decoded.userId) {
-      return res.status(401).send({ status: false, message: "not auth" });
+      return res.status(403).send({ status: false, message: "not auth" });
     }
 
     //checking cart in DB
-    let cart = await cartModel.findOne({ _id: data.cartId }).lean();
+    let cart = await cartModel.findOne({ _id: data.cartId.trim() }).lean();
     if (!cart) {
       return res
         .status(404)
@@ -237,7 +243,7 @@ async function updateCart(req, res) {
     //Getting all the productIds in a cart to a variable as an array
     let carProductIds = cart.items.map((x) => x.productId.toString());
     //checking the give productId is exists in cart or not
-    if (!carProductIds.includes(productId)) {
+    if (!carProductIds.includes(productId.trim())) {
       return res
         .status(404)
         .send({ status: false, message: "product not found in cart" });
@@ -254,7 +260,7 @@ async function updateCart(req, res) {
     //If removeProduct===1 we have to reduce the particular quantity of product and  totalPrice,totalItems
     if (data.removeProduct === 1) {
       for (let i = 0; i < cart.items.length; i++) {
-        if (data.productId === cart.items[i].productId.toString()) {
+        if (data.productId.trim() === cart.items[i].productId.toString()) {
           cart.items[i].quantity -= 1;
           cart.totalPrice -= cartProductsPrices[i];
         }
@@ -262,10 +268,10 @@ async function updateCart(req, res) {
         //While reducing the quantity, If quantity becomes 0 we have to remove the product from the items
         if (cart.items[i].quantity === 0) {
           let items = cart.items.filter(
-            (x) => x.productId.toString() !== data.productId
+            (x) => x.productId.toString() !== data.productId.trim()
           );
           let updatedCart = await cartModel.findOneAndUpdate(
-            { _id: data.cartId },
+            { _id: data.cartId.trim() },
             {
               items: items,
               totalPrice: cart.totalPrice,
@@ -275,6 +281,7 @@ async function updateCart(req, res) {
           );
           return res.status(200).send({
             status: true,
+            message: "Success",
             data: updatedCart,
           });
         }
@@ -282,7 +289,7 @@ async function updateCart(req, res) {
 
       //updation of cart
       let updatedCart = await cartModel.findOneAndUpdate(
-        { _id: data.cartId },
+        { _id: data.cartId.trim() },
         {
           items: cart.items,
           totalPrice: cart.totalPrice,
@@ -292,6 +299,7 @@ async function updateCart(req, res) {
       );
       return res.status(200).send({
         status: true,
+        message: "Success",
         data: updatedCart,
       });
     }
@@ -300,10 +308,12 @@ async function updateCart(req, res) {
 
     //Getting the products which are not same as productId given in request
     let items = cart.items.filter(
-      (x) => x.productId.toString() !== data.productId
+      (x) => x.productId.toString() !== data.productId.trim()
     );
     //Getting the productIds which are not same as productId given in request
-    let proIds = carProductIds.filter((x) => x.toString() !== data.productId);
+    let proIds = carProductIds.filter(
+      (x) => x.toString() !== data.productId.trim()
+    );
 
     //Making a DB call to get all the products in a variable as a array of objects
     let Products = await productModel.find({
@@ -324,12 +334,13 @@ async function updateCart(req, res) {
 
     //updating the cart
     let updatedCart = await cartModel.findOneAndUpdate(
-      { _id: data.cartId },
+      { _id: data.cartId.trim() },
       { items: items, totalPrice: totalPrice, totalItems: totalItems },
       { new: true }
     );
     return res.status(200).send({
       status: true,
+      message: "Success",
       data: updatedCart,
     });
   } catch (err) {
@@ -377,6 +388,7 @@ async function getCart(req, res) {
 
     return res.status(200).send({
       status: true,
+      message: "Success",
       data: cart_in_DB,
     });
   } catch (err) {

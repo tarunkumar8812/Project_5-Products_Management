@@ -55,7 +55,7 @@ const createProduct = async function (req, res) {
       if (!Object.keys(data).includes(field)) {
         return res
           .status(400)
-          .send({ status: false, msg: `${field} is required` });
+          .send({ status: false, message: `${field} is required` });
       }
     }
 
@@ -76,7 +76,7 @@ const createProduct = async function (req, res) {
         if (data[field].trim() === "") {
           return res
             .status(400)
-            .send({ status: false, msg: `required value of the ${field}` });
+            .send({ status: false, message: `required value of the ${field}` });
         }
       }
     }
@@ -84,32 +84,33 @@ const createProduct = async function (req, res) {
     if (!isValidString(description.trim())) {
       return res
         .status(400)
-        .send({ status: false, msg: "description must be in string" });
+        .send({ status: false, message: "description must be in string" });
     }
 
     if (!isValidPrice(price.trim())) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "price must be in number/decimal" });
+      return res.status(400).send({
+        status: false,
+        message: "price must be in number/decimal(ex:-125/12.5)",
+      });
     }
 
     if (!isValidCurencyId(currencyId.trim())) {
       return res
         .status(400)
-        .send({ status: false, msg: "currencyId must be in INR" });
+        .send({ status: false, message: "currencyId must be in INR" });
     }
 
     if (!isValidCurencyFormat(currencyFormat.trim())) {
       return res
         .status(400)
-        .send({ status: false, msg: "CurencyFormat must be in ₹" });
+        .send({ status: false, message: "CurencyFormat must be in ₹" });
     }
 
     if (isFreeShipping) {
       if (!["true", "false"].includes(isFreeShipping.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "isFreeShipping must be in true/false" });
+          .send({ status: false, message: "isFreeShipping must be in true/false" });
       }
       if (isFreeShipping.trim() === "true") {
         data.isFreeShipping = true;
@@ -121,17 +122,17 @@ const createProduct = async function (req, res) {
       if (!isValidString(style.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "style must be in string" });
+          .send({ status: false, message: "style must be in string" });
       }
     }
 
     let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-    let sizes = availableSizes.split(",").map((x) => x.toUpperCase());
+    let sizes = availableSizes.split(",").map((x) => x.trim().toUpperCase());
     for (field of sizes) {
       if (!listOfSizes.includes(field)) {
         return res.status(400).send({
           status: false,
-          msg: `availableSizes must be in ${listOfSizes.join(", ")}`,
+          message: `availableSizes must be in ${listOfSizes.join(", ")}`,
         });
       }
     }
@@ -141,20 +142,20 @@ const createProduct = async function (req, res) {
       if (!isValidPrice(installments.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "installments must be in numbers " });
+          .send({ status: false, message: "installments must be in numbers " });
       }
     }
 
     if (!isValidString(title.trim())) {
       return res
         .status(400)
-        .send({ status: false, msg: "title must be in string" });
+        .send({ status: false, message: "title must be in string" });
     }
     let titleInDb = await productModel.findOne({ title });
     if (titleInDb) {
       return res
         .status(409)
-        .send({ status: false, msg: "title is already exists" });
+        .send({ status: false, message: "title is already exists" });
     }
 
     if (files.length === 0) {
@@ -185,6 +186,7 @@ const createProduct = async function (req, res) {
     let createProductData = await productModel.create(data);
     return res.status(201).send({
       status: true,
+      message: "Success",
       data: createProductData,
     });
   } catch (err) {
@@ -213,7 +215,7 @@ async function getProduct(req, res) {
         if (data[field].trim() === "") {
           return res
             .status(400)
-            .send({ status: false, msg: `required value of the ${field}` });
+            .send({ status: false, message: `required value of the ${field}` });
         }
       }
     }
@@ -232,19 +234,22 @@ async function getProduct(req, res) {
       if (!isValidString(size.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "size must be in string" });
+          .send({ status: false, message: "size must be in string" });
       }
       let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-      let sizes = size.split(",").map((x) => x.toUpperCase());
-      for (field of sizes) {
-        if (!listOfSizes.includes(field)) {
-          return res.status(400).send({
-            status: false,
-            msg: `Sizes must be in ${listOfSizes.join(", ")}`,
-          });
+      if (size.length > 0) {
+        let sizes = size.split(",").map((x) => x.trim().toUpperCase());
+        for (field of sizes) {
+          if (!listOfSizes.includes(field)) {
+            return res.status(400).send({
+              status: false,
+              message: `Sizes must be in ${listOfSizes.join(", ")}`,
+            });
+          }
         }
+        obj.availableSizes = { $in: sizes };
       }
-      obj.availableSizes = { $in: sizes };
+      obj.availableSizes = { $in: size.trim().toUpperCase() };
     }
 
     //checking name
@@ -252,7 +257,7 @@ async function getProduct(req, res) {
       if (!isValidString(name.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "name must be in string" });
+          .send({ status: false, message: "name must be in string" });
       }
       obj.title = { $regex: `${name}` };
     }
@@ -262,7 +267,10 @@ async function getProduct(req, res) {
       if (!isValidPrice(priceGreaterThan.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "priceGreaterThan must be in number" });
+          .send({
+            status: false,
+            message: "priceGreaterThan must be in positive number",
+          });
       }
       obj.price = { $gte: priceGreaterThan };
     }
@@ -272,7 +280,10 @@ async function getProduct(req, res) {
       if (!isValidPrice(priceLessThan.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "priceLessThan must be in number" });
+          .send({
+            status: false,
+            message: "priceLessThan must be in positive number",
+          });
       }
       obj.price = { $lte: priceLessThan };
     }
@@ -288,14 +299,14 @@ async function getProduct(req, res) {
       if (!(priceSort == "-1" || priceSort == "1")) {
         return res
           .status(400)
-          .send({ status: false, msg: "priceSort must be in 1/-1" });
+          .send({ status: false, message: "priceSort must be in 1/-1" });
       }
       let getProduct = await productModel.find(obj).sort({ price: +priceSort });
 
       if (getProduct.length === 0) {
         return res
           .status(404)
-          .send({ status: false, msg: "products not found" });
+          .send({ status: false, message: "products not found" });
       }
       return res.status(200).send({
         status: true,
@@ -308,7 +319,7 @@ async function getProduct(req, res) {
     //to find products
     let getProduct = await productModel.find(obj);
     if (getProduct.length === 0) {
-      return res.status(404).send({ status: false, msg: "products not found" });
+      return res.status(404).send({ status: false, message: "products not found" });
     }
     return res.status(200).send({
       status: true,
@@ -332,14 +343,14 @@ async function getProductByParam(req, res) {
     if (!ObjectId.isValid(productId)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter Valid productId" });
+        .send({ status: false, message: "Please Enter Valid productId" });
     }
     let check = await productModel.findOne({
       _id: productId,
       isDeleted: false,
     });
     if (!check) {
-      return res.status(404).send({ status: false, msg: "product not found" });
+      return res.status(404).send({ status: false, message: "product not found" });
     }
     return res.status(200).send({ status: true, data: check });
   } catch (err) {
@@ -378,14 +389,14 @@ async function updateProductByParam(req, res) {
     if (!ObjectId.isValid(productId)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter Valid productId" });
+        .send({ status: false, message: "Please Enter Valid productId" });
     }
 
     //checking atleast one data
     if (Object.keys(data).length == 0 && files === undefined) {
       return res.status(400).send({
         status: false,
-        msg: "for updation atleast one key value pair is required",
+        message: "for updation atleast one key value pair is required",
       });
     }
 
@@ -418,12 +429,12 @@ async function updateProductByParam(req, res) {
         ) {
           return res
             .status(400)
-            .send({ status: false, msg: "required productImage file" });
+            .send({ status: false, message: "required productImage file" });
         }
         if (data[field].trim() === "") {
           return res
             .status(400)
-            .send({ status: false, msg: `required value of the ${field}` });
+            .send({ status: false, message: `required value of the ${field}` });
         }
       }
     }
@@ -432,7 +443,7 @@ async function updateProductByParam(req, res) {
       if (!isValidString(description)) {
         return res
           .status(400)
-          .send({ status: false, msg: "description must be in string" });
+          .send({ status: false, message: "description must be in string" });
       }
     }
 
@@ -440,7 +451,7 @@ async function updateProductByParam(req, res) {
       if (!isValidPrice(price)) {
         return res
           .status(400)
-          .send({ status: false, msg: "price must be in number" });
+          .send({ status: false, message: "price must be in number" });
       }
     }
 
@@ -448,7 +459,7 @@ async function updateProductByParam(req, res) {
       if (!["true", "false"].includes(isFreeShipping.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "isFreeShipping must be in true/false" });
+          .send({ status: false, message: "isFreeShipping must be in true/false" });
       }
       if (isFreeShipping.trim() === "true") {
         data["isFreeShipping"] = true;
@@ -461,7 +472,7 @@ async function updateProductByParam(req, res) {
       if (!isValidString(style.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "style must be in string" });
+          .send({ status: false, message: "style must be in string" });
       }
     }
 
@@ -472,7 +483,7 @@ async function updateProductByParam(req, res) {
         if (!arr.includes(field)) {
           return res.status(400).send({
             status: false,
-            msg: `availableSizes must be in ${arr.join(", ")}`,
+            message: `availableSizes must be in ${arr.join(", ")}`,
           });
         }
       }
@@ -483,7 +494,7 @@ async function updateProductByParam(req, res) {
       if (!isValidPrice(installments.trim())) {
         return res
           .status(400)
-          .send({ status: false, msg: "installments must be in numbers " });
+          .send({ status: false, message: "installments must be in numbers " });
       }
     }
 
@@ -491,13 +502,13 @@ async function updateProductByParam(req, res) {
       if (!isValidString(title)) {
         return res
           .status(400)
-          .send({ status: false, msg: "Please Enter The Valid title " });
+          .send({ status: false, message: "Please Enter The Valid title " });
       }
       let checkTitle = await productModel.findOne({ title });
       if (checkTitle) {
         return res
           .status(409)
-          .send({ status: false, msg: "title is already exists" });
+          .send({ status: false, message: "title is already exists" });
       }
     }
 
@@ -509,7 +520,7 @@ async function updateProductByParam(req, res) {
     if (!check) {
       return res
         .status(404)
-        .send({ status: false, msg: "product not founded" });
+        .send({ status: false, message: "product not founded" });
     }
 
     // console.log(files);
@@ -576,7 +587,7 @@ async function deleteProduct(req, res) {
     if (!ObjectId.isValid(productId)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please Enter Valid productId" });
+        .send({ status: false, message: "Please Enter Valid productId" });
     }
 
     const deleteProduct = await productModel.findOneAndUpdate(
@@ -586,10 +597,10 @@ async function deleteProduct(req, res) {
       }
     );
     if (!deleteProduct) {
-      return res.status(404).send({ status: false, msg: "product not found" });
+      return res.status(404).send({ status: false, message: "product not found" });
     }
 
-    return res.status(200).send({ status: true, msg: "deleted succefully" });
+    return res.status(200).send({ status: true, message: "deleted succefully" });
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
