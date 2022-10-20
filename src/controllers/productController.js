@@ -531,9 +531,11 @@ async function updateProductByParam(req, res) {
       }
       for (field of sizes) {
         if (check.availableSizes.includes(field)) {
+          //remove size
           check.availableSizes.splice(check.availableSizes.indexOf(field), 1);
           data.availableSizes = check.availableSizes;
         } else {
+          //Add size
           check.availableSizes.push(field);
           data.availableSizes = check.availableSizes;
         }
