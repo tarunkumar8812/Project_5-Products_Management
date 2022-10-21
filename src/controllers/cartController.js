@@ -139,7 +139,7 @@ async function createCart(req, res) {
         );
         let Doc = upCart.toObject();
         Doc.items.forEach((x) => delete x._id);
-        return res.status(200).send({
+        return res.status(201).send({
           status: true,
           message: "Success",
           data: Doc,
