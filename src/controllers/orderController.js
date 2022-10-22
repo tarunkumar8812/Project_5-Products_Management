@@ -1,9 +1,12 @@
 const orderModel = require("../models/orderModel");
-const productModel = require("../models/productModel");
 const userModel = require("../models/userModel");
 const cartModel = require("../models/cartModel");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
+
+
+
+//   ---------------------------------- create order API -------------------------------
 
 async function createOrder(req, res) {
   try {
@@ -34,9 +37,12 @@ async function createOrder(req, res) {
       return res.status(404).send({ status: false, message: "cart not found" });
     }
 
+
+    // ------------ calculating the total quantity  -------------
     let totalQuantity = 0;
     cart_in_DB.items.forEach((x) => (totalQuantity += x.quantity));
     cart_in_DB["totalQuantity"] = totalQuantity;
+
     if (cancellable === true || cancellable === false) {
       cart_in_DB["cancellable"] = cancellable;
     }
@@ -80,7 +86,8 @@ async function createOrder(req, res) {
   }
 }
 
-//   -------------- update order API -----------
+
+//   ---------------------------------- update order API -------------------------------
 
 async function updateOrder(req, res) {
   try {
@@ -116,6 +123,7 @@ async function updateOrder(req, res) {
       return res.status(404).send({ status: false, message: "user not found" });
     }
 
+    // ------------ checking order in DB -------------
     let order_of_user = await orderModel.findOne({ userId: userId });
     if (!order_of_user) {
       return res.status(400).send({
@@ -124,12 +132,15 @@ async function updateOrder(req, res) {
       });
     }
 
-    if(order_of_user.status==="completed"||order_of_user.status==="cancelled"){
+    // ------------ checking order status in DB -------------
+    if (order_of_user.status === "completed" || order_of_user.status === "cancelled") {
       return res.status(400).send({
         status: false,
         message: `the order is already ${order_of_user.status}`,
       });
     }
+
+    // ------------ checking order is cancelable or not  -------------
     if (status === "cancelled") {
       if (order_of_user.cancellable === true) {
         let updatedOrder = await orderModel.findOneAndUpdate(
@@ -148,6 +159,7 @@ async function updateOrder(req, res) {
         message: "these order is not cancellable",
       });
     }
+
     let updatedOrder = await orderModel.findOneAndUpdate(
       { userId: userId },
       { status: status },

@@ -23,6 +23,9 @@ const authentication = async function (req, res, next) {
   }
 };
 
+
+
+
 async function authorization(req, res, next) {
   try {
     userId = req.params.userId;

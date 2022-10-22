@@ -133,7 +133,8 @@ const createProduct = async function (req, res) {
       if (!listOfSizes.includes(field)) {
         return res.status(400).send({
           status: false,
-          message: `availableSizes must be in ${listOfSizes.join(", ")}`,
+          message: `availableSizes must be in ${listOfSizes}`,
+          // message: `availableSizes must be in ${listOfSizes.join(", ")}`,
         });
       }
     }
@@ -203,8 +204,7 @@ async function getProduct(req, res) {
   try {
     let data = req.query;
 
-    let { size, name, priceGreaterThan, priceLessThan, priceSort, ...rest } =
-      data;
+    let { size, name, priceGreaterThan, priceLessThan, priceSort, ...rest } = data;
 
     const arr = [
       "size",
@@ -213,7 +213,7 @@ async function getProduct(req, res) {
       "priceLessThan",
       "priceSort",
     ];
-
+// --------------checking empty string of give filter--------------
     for (field of arr) {
       if (Object.keys(data).includes(field)) {
         if (data[field].trim() === "") {
@@ -233,14 +233,17 @@ async function getProduct(req, res) {
       });
     }
 
-    //checking size
+    //--------------checking size--------------
     if (size) {
       if (!isValidString(size.trim())) {
         return res
           .status(400)
           .send({ status: false, message: "size must be in string" });
       }
+
       let listOfSizes = ["S", "XS", "M", "X", "L", "XXL", "XL"];
+
+      //---------- mathching given sizes with availbles and making it an arr--------------
       if (size.length > 0) {
         let sizes = size.split(",").map((x) => x.trim().toUpperCase());
         for (field of sizes) {
@@ -252,7 +255,9 @@ async function getProduct(req, res) {
           }
         }
         obj.availableSizes = { $in: sizes };
-      } else {
+      }
+      //---------- if user is giving other than available sizes ----------
+      else {
         if (!listOfSizes.includes(size.trim().toUpperCase())) {
           return res.status(400).send({
             status: false,
@@ -263,7 +268,7 @@ async function getProduct(req, res) {
       }
     }
 
-    //checking name
+    //--------------------checking name--------------------
     if (name) {
       if (!isValidString(name.trim())) {
         return res
@@ -273,7 +278,7 @@ async function getProduct(req, res) {
       obj.title = { $regex: `${name}` };
     }
 
-    //checking priceGreaterThan
+    //--------------------checking priceGreaterThan--------------------
     if (priceGreaterThan) {
       if (!isValidPrice(priceGreaterThan.trim())) {
         return res.status(400).send({
@@ -284,7 +289,7 @@ async function getProduct(req, res) {
       obj.price = { $gte: priceGreaterThan };
     }
 
-    //checking priceLessThan
+    //-------------------------checking priceLessThan-------------------------
     if (priceLessThan) {
       if (!isValidPrice(priceLessThan.trim())) {
         return res.status(400).send({
@@ -295,19 +300,21 @@ async function getProduct(req, res) {
       obj.price = { $lte: priceLessThan };
     }
 
+    // ------------ if priceGreaterThan & priceLessThan both are use by user ----------
     if (priceGreaterThan && priceLessThan) {
       obj.price = { $gte: priceGreaterThan, $lte: priceLessThan };
     }
 
     obj.isDeleted = false;
 
-    //checking priceSort
+    //---------------------checking priceSort---------------------
     if (priceSort) {
       if (!(priceSort == "-1" || priceSort == "1")) {
         return res
           .status(400)
           .send({ status: false, message: "priceSort must be in 1/-1" });
       }
+      // --------------- getting product data in from DB using Sort ------------------
       let getProduct = await productModel.find(obj).sort({ price: +priceSort });
 
       if (getProduct.length === 0) {
@@ -323,7 +330,7 @@ async function getProduct(req, res) {
 
     // console.log(obj);
 
-    //to find products
+    //---------- find products without sorting -----------------
     let getProduct = await productModel.find(obj);
     if (getProduct.length === 0) {
       return res
@@ -510,7 +517,7 @@ async function updateProductByParam(req, res) {
       }
     }
 
-    //checking in DB
+    // ---------------------checking in product DB  ---------------------
     let check = await productModel.findOne({
       _id: productId,
       isDeleted: false,

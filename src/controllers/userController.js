@@ -5,15 +5,11 @@ const { uploadFile } = require("../AWS/aws");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 
-const {
-  isValidString,
-  isValidEmail,
-  isValidPhn,
-  isValidPass,
-  isValidPincode,
-  validEmail,
-  validPW_4_Login,
-} = require("../validations/validator");
+const { isValidString, isValidEmail, isValidPhn, isValidPass, isValidPincode, validEmail, validPW_4_Login, } = require("../validations/validator");
+
+
+
+// ----------------------------------- Register user API ----------------------------------
 
 async function createUser(req, res) {
   try {
@@ -23,16 +19,7 @@ async function createUser(req, res) {
 
     console.log(files);
 
-    const {
-      fname,
-      lname,
-      email,
-      profileImage,
-      phone,
-      password,
-      address,
-      ...rest
-    } = data;
+    const { fname, lname, email, profileImage, phone, password, address, ...rest } = data;
 
     if (Object.keys(data).length == 0)
       return res
@@ -46,15 +33,7 @@ async function createUser(req, res) {
       });
     }
 
-    const requiredFields = [
-      "fname",
-      "lname",
-      "email",
-      "profileImage",
-      "phone",
-      "password",
-      "address",
-    ];
+    const requiredFields = ["fname", "lname", "email", "profileImage", "phone", "password", "address",];
     let err = [];
     const addressFields = ["street", "city", "pincode"];
     const sb_Fields = ["shipping", "billing"];
@@ -227,7 +206,7 @@ async function createUser(req, res) {
   }
 }
 
-// --------------------------- Login API --------------------------
+// --------------------------------------- Login API --------------------------------------
 
 const login = async function (req, res) {
   try {
@@ -307,7 +286,7 @@ const login = async function (req, res) {
   }
 };
 
-// --------------------------- getUser API --------------------------
+// ------------------------------------- get User API ------------------------------------
 
 const getUser = async function (req, res) {
   try {
@@ -336,7 +315,7 @@ const getUser = async function (req, res) {
   }
 };
 
-// --------------------------- updateUser API --------------------------
+// ------------------------------------ update User API -----------------------------------
 
 const userUpdate = async function (req, res) {
   let userid = req.params.userId;

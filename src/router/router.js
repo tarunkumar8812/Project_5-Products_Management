@@ -42,19 +42,14 @@ router.delete("/products/:productId", deleteProduct);
 
 // -------------------------- Cart APIs --------------------------
 
-router.post("/users/:userId/cart", authentication, createCart);
-router.put("/users/:userId/cart", authentication, updateCart);
-router.get("/users/:userId/cart", authentication, getCart);
-router.delete("/users/:userId/cart", authentication, deleteCart);
+router.post("/users/:userId/cart", authentication, authorization, createCart);
+router.put("/users/:userId/cart", authentication, authorization, updateCart);
+router.get("/users/:userId/cart", authentication, authorization, getCart);
+router.delete("/users/:userId/cart", authentication, authorization, deleteCart);
 
 // ------------------------- Order APIs -------------------------
 
-router.post(
-  "/users/:userId/orders",
-  authentication,
-  authorization,
-  createOrder
-);
+router.post("/users/:userId/orders", authentication, authorization, createOrder);
 router.put("/users/:userId/orders", authentication, authorization, updateOrder);
 
 module.exports = router;

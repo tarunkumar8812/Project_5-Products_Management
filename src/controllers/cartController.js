@@ -5,6 +5,9 @@ const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 const { isValidString } = require("../validations/validator");
 
+//-------------------------------------------create Cart API-------------------------------------------
+
+
 async function createCart(req, res) {
   try {
     let data = req.body;
@@ -12,12 +15,21 @@ async function createCart(req, res) {
 
     let { cartId, productId, ...rest } = data;
 
+    // --------------------validation of body --------------------
+
+    if (Object.keys(data).length == 0) {
+      return res
+        .status(400)
+        .send({ status: false, message: "Please fill data in body" });
+    }
+
     if (Object.keys(rest).length > 0) {
       return res.status(400).send({
         status: false,
         message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
       });
     }
+    // --------------------validation of userId--------------------
 
     if (userId === ":userId") {
       return res
@@ -31,11 +43,8 @@ async function createCart(req, res) {
         .send({ status: false, message: "required valid userId" });
     }
 
-    if (Object.keys(data).length == 0) {
-      return res
-        .status(400)
-        .send({ status: false, message: "Please fill data in body" });
-    }
+
+    // --------------------validation of CartId--------------------
 
     if (cartId) {
       if (!isValidString(cartId)) {
@@ -50,7 +59,7 @@ async function createCart(req, res) {
           .send({ status: false, message: "required valid cartId" });
       }
     }
-
+    // --------------------validation of productId--------------------
     if (!isValidString(productId)) {
       return res.status(400).send({
         status: false,
@@ -69,29 +78,30 @@ async function createCart(req, res) {
       return res.status(404).send({ status: false, message: "user not found" });
     }
 
-    //checking product in DB
+    //------------checking product in DB------------
     let product = await productModel.findOne({
       _id: productId.trim(),
       isDeleted: false,
     });
+
     if (!product) {
       return res
         .status(404)
         .send({ status: false, message: "product not found" });
     }
-
+    // ----------------- authorization -----------------
     if (userId !== req.decoded.userId) {
       return res.status(401).send({ status: false, message: "not auth" });
     }
 
-    //Getting product price
+    //-----------------Getting product price-----------------
     let price = product.price;
 
-    //checking cart is present for the given userID
+    //------------ checking cart is present for the given userID ------------ 
     let cartOfUser = await cartModel.findOne({ userId: userId });
     if (cartOfUser) {
+      //checking cartId already exist in cart collection are not
       if (cartId) {
-        //checking cartId exist in cart collection are not
         let cart = await cartModel.findOne({
           _id: cartId.trim(),
           userId: userId,
@@ -117,7 +127,7 @@ async function createCart(req, res) {
           items.quantity = 1;
           cart.items.push(items);
         }
-        //If the items lenght is 0, we have push the products with out checking
+        //If the items lenght is 0, we have push the products without checking
         if (cart.items.length === 0) {
           let items = {};
           items.productId = productId.trim();
@@ -163,19 +173,22 @@ async function createCart(req, res) {
     data.totalItems = 1;
 
     let cartDoc = await cartModel.create(data);
+
     let Doc = cartDoc.toObject();
+
     Doc.items.forEach((x) => delete x._id);
     return res.status(201).send({
       status: true,
       message: "Success",
       data: Doc,
     });
+
   } catch (err) {
     return res.status(500).send({ status: false, message: err.message });
   }
 }
 
-//====================updateCart========================//
+//-------------------------------------update Cart API-------------------------------------
 async function updateCart(req, res) {
   try {
     let data = req.body;
@@ -230,16 +243,19 @@ async function updateCart(req, res) {
         .send({ status: false, message: "removeProduct must be number(0/1)" });
     }
 
+    // -------------checking user in DB -------------------
     let user_in_DB = await userModel.findById(userId);
     if (!user_in_DB) {
       return res.status(404).send({ status: false, message: "user not found" });
     }
 
+    // ----------------- authorization -----------------
+
     if (userId !== req.decoded.userId) {
       return res.status(403).send({ status: false, message: "not auth" });
     }
 
-    //checking cart in DB
+    //-----------------checking cart in DB-----------------
     let cart = await cartModel
       .findOne({ _id: data.cartId.trim(), userId: userId })
       .lean();
@@ -269,7 +285,7 @@ async function updateCart(req, res) {
     //Getting all the product prices in cart as an array in variable
     let cartProductsPrices = cartProducts.map((x) => x.price);
 
-    //If removeProduct===1 we have to reduce the particular quantity of product and  totalPrice,totalItems
+    //If removeProduct === 1 we have to reduce the particular quantity of product and  totalPrice,totalItems
     if (data.removeProduct === 1) {
       for (let i = 0; i < cart.items.length; i++) {
         if (data.productId.trim() === cart.items[i].productId.toString()) {
@@ -314,7 +330,7 @@ async function updateCart(req, res) {
         message: "Success",
         data: updatedCart,
       });
-    }  
+    }
 
     //If removeProduct===0 we have to remove the product from the items
 
@@ -360,7 +376,7 @@ async function updateCart(req, res) {
   }
 }
 
-// --------------- get Cart ---------------------------
+// ------------------------------------ get Cart API -------------------------------------
 
 async function getCart(req, res) {
   try {
@@ -408,7 +424,7 @@ async function getCart(req, res) {
   }
 }
 
-// ----------- delete Cart API ----------------
+// -------------------------------------- delete Cart API --------------------------------
 
 async function deleteCart(req, res) {
   try {
