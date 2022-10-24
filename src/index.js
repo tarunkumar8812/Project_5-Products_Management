@@ -11,11 +11,10 @@ app.use(express.urlencoded({ extended: true }));
 
 
 
-mongoose
-  .connect(process.env.MONGO_URL ||
-    "mongodb+srv://Firoz_Shaik_:XaFPzUPEGu5fK1KS@cluster0.dshhzz6.mongodb.net/group23Database-project5-DB",
-    { useNewUrlParser: true }
-  )
+mongoose.connect(process.env.MONGO_URL || "mongodb+srv://Firoz_Shaik_:XaFPzUPEGu5fK1KS@cluster0.dshhzz6.mongodb.group23Database-project5-DB", {
+  useNewUrlParser: true
+}
+)
   .then(() => console.log("MongoDB is connected"))
   .catch((err) => console.log(err.message));
 

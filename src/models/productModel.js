@@ -5,41 +5,58 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      trim:true
+      trim: true
     },
 
     description: {
       type: String,
       required: true,
-      trim:true
+      trim: true
     },
-    price: { type: Number, required: true,trim:true },
+    price: {
+      type: Number,
+      required: true,
+      trim: true
+    },
     currencyId: {
       type: String,
       required: true,
-      trim:true
+      trim: true
     },
     currencyFormat: {
       type: String,
       required: true,
       trim: true,
     },
-    isFreeShipping: { type: Boolean, default: false },
+    isFreeShipping: {
+      type: Boolean,
+      default: false
+    },
     productImage: {
       type: String,
       required: true,
     }, // s3 link
-    style: { type: String,trim:true },
-
+    style: {
+      type: String,
+      trim: true
+    },
     availableSizes: {
       type: [String],
       required: true,
-      enum: ["S", "XS", "M", "X", "L", "XXL", "XL"],
+      enum: ["XS", "S", "M", "X", "L", "XL", "XXL"],
     },
 
-    installments: { type: Number },
-    deletedAt: { type: Date, default: null },
-    isDeleted: { type: Boolean, default: false },
+    installments: {
+      type: Number
+    },
+    deletedAt: {
+      type: Date,
+      default: null
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false
+    },
   },
 
   {

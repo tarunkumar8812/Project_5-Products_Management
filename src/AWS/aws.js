@@ -5,6 +5,7 @@ aws.config.update({
   secretAccessKey: "9f+YFBVcSjZWM6DG9R4TUN8k8TGe4X+lXmO4jPiU",
   region: "ap-south-1",
 });
+
 let uploadFile = async (file) => {
   return new Promise(function (resolve, reject) {
     // this function will upload file to aws and return the link
