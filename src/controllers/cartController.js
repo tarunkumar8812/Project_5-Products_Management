@@ -1,9 +1,5 @@
 const cartModel = require("../models/cartModel");
 const productModel = require("../models/productModel");
-const userModel = require("../models/userModel");
-const mongoose = require("mongoose");
-const ObjectId = mongoose.Types.ObjectId;
-const { isValidString } = require("../validations/validator");
 const { V_userIdInParam, V_productIdInBody, V_cartIdInBody, V_removeProduct, validRest } = require("../validations/utils");
 
 
@@ -132,7 +128,7 @@ async function updateCart(req, res) {
 
     if (errors.length > 0) return res.status(400).send({ status: false, message: ` ( ${errors} )` });
 
-    //-----------------checking cart in DB-----------------
+    //----------------- checking cart in DB -----------------
     let cart = await cartModel.findOne({ _id: data.cartId.trim(), userId: userId }).lean();
 
     if (!cart) return res.status(404).send({ status: false, message: "cart not found with given userID and cartId combination", });
@@ -198,10 +194,6 @@ async function getCart(req, res) {
   try {
     let userId = req.params.userId;
 
-    let user_in_DB = await userModel.findById(userId);
-
-    if (!user_in_DB) return res.status(404).send({ status: false, message: "user not not found" });
-
     let cart_in_DB = await cartModel.findOne({ userId: userId }).select({ __v: 0 });
 
     if (!cart_in_DB) return res.status(404).send({ status: false, message: "cart not not found" });
@@ -218,10 +210,6 @@ async function getCart(req, res) {
 async function deleteCart(req, res) {
   try {
     let userId = req.params.userId;
-
-    let user_in_DB = await userModel.findById(userId);
-
-    if (!user_in_DB) return res.status(404).send({ status: false, message: "user not not found" });
 
     let cart_in_DB = await cartModel.findOneAndUpdate({ userId }, { items: [], totalPrice: 0, totalItems: 0, }, { new: true });
 

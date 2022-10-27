@@ -23,12 +23,45 @@ const V_cartIdInBody = function (cartId, e) {
     if (cartId.trim() == "") { return e.push(` { cartId can not be empty }`); }
     if (!ObjectId(cartId)) { return e.push(` { Please Enter Valid cartId }`); }
 }
+const V_orderIdInBody = function (orderId, e) {
+    if (orderId == undefined) { return e.push(` { orderId required }`); }
+    if (typeof orderId != "string") { return e.push(` { orderId must be string }`); }
+    if (orderId.trim() == "") { return e.push(` { orderId can not be empty }`); }
+    if (!ObjectId(orderId)) { return e.push(` { Please Enter Valid orderId }`); }
+}
 const V_removeProduct = function (value, e) {
     if (value == undefined) { return }
     if (typeof value !== "number") { return e.push(`{ removeProduct must be number }`); }
     if (!(value == 0 || value == 1)) { return e.push(`{ removeProduct must be 0/1 }`); }
+}
+
+const V_cancellable = function (value, e) {
+    if (value == undefined) { return }
+    if (!(value == true || value == false)) { return e.push(`{ cancellable must be Boolean true/false }`); }
+}
+
+const V_statusForOrder = function (value, e) {
+    if (value == undefined) { return e.push(`{ status is required and available status are:-( "pending", "completed", "cancelled") }`) }
+    if (value.trim() == "") { return e.push(`{ status cannot be empty }`); }
+    if (typeof value != "string") { return e.push(`{ status must be string format }`); }
+    let arr = ["pending", "completed", "cancelled"];
+    if (!arr.includes(value.trim())) { return e.push(`{ Invlid status- avlaible status are (${arr}) }`); }
   }
 
+
+const V_likeStatus = function (value, e) {
+    if (value == undefined) { return }
+    if (value.trim() == "") { return e.push(`{ likeStatus cannot be empty }`); }
+    if (typeof value != "string") { return e.push(`{ likeStatus must be string format }`); }
+    if (!(value.trim() == 'like' || value.trim() == "dislike")) { return e.push(`{ likeStatus must be like/dislike }`); }
+}
+const V_ratings = function (value, e) {
+    if (value == undefined) { return }
+    if (typeof value != "number") { return e.push(`{ ratings must be number format }`); }
+    let regex = /^([1-5]){1,1}$/
+    let validRegex = regex.test(value)
+    if (validRegex == false) { return e.push(`{ ratings must be 1-5  }`) }
+}
 
 // ------------- validation of Rest unexpected Fields -------------
 const validRest = function (rest, e) {
@@ -36,4 +69,4 @@ const validRest = function (rest, e) {
 }
 
 
-module.exports = { V_productIdInParam, V_userIdInParam, V_productIdInBody, V_cartIdInBody,V_removeProduct,validRest }
+module.exports = { V_productIdInParam, V_userIdInParam, V_productIdInBody, V_cartIdInBody,V_orderIdInBody,V_statusForOrder, V_removeProduct, V_cancellable, V_likeStatus, V_ratings, validRest }

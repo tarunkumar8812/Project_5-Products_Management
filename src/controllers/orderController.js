@@ -1,8 +1,6 @@
 const orderModel = require("../models/orderModel");
-const userModel = require("../models/userModel");
 const cartModel = require("../models/cartModel");
-const mongoose = require("mongoose");
-const ObjectId = mongoose.Types.ObjectId;
+const { V_userIdInParam, V_cartIdInBody, V_orderIdInBody, V_statusForOrder, V_cancellable, validRest } = require("../validations/utils");
 
 
 
@@ -12,30 +10,27 @@ async function createOrder(req, res) {
   try {
     let userId = req.params.userId;
     let data = req.body;
-    let { cancellable, ...rest } = data;
+    let { cartId, cancellable, ...rest } = data;
 
-    // if (Object.keys(rest).length > 0) {
-    //   return res.status(400).send({
-    //     status: false,
-    //     message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
-    //   });
-    // }
 
-    if (data.hasOwnProperty("cancellable")) {
-      if (typeof cancellable !== "boolean") {
-        return res.status(400).send({
-          status: false,
-          message: "value of cancellable must be Boolean",
-        });
-      }
-    }
+    if (Object.keys(data).length == 0) return res.status(400).send({ status: false, message: "Please fill data in body" });
 
+    let errors = []
+
+    V_userIdInParam(userId, errors)
+
+    V_cartIdInBody(cartId, errors)
+
+    V_cancellable(cancellable, errors)
+
+    validRest(rest, errors)
+
+    if (errors.length > 0) return res.status(400).send({ status: false, message: ` ( ${errors} )` });
 
     // ------------ checking cart in DB -------------
     let cart_in_DB = await cartModel.findOne({ userId: userId }).lean();
 
     if (!cart_in_DB) return res.status(404).send({ status: false, message: "cart not found" });
-
 
 
     // ------------ calculating the total quantity  -------------
@@ -83,32 +78,25 @@ async function createOrder(req, res) {
 
 async function updateOrder(req, res) {
   try {
-    let data = req.body;
     let userId = req.params.userId;
+    let data = req.body;
 
-    let { status, ...rest } = data;
+    let { status, orderId, ...rest } = data;
 
-    // if (Object.keys(rest).length > 0) {
-    //   return res.status(400).send({
-    //     status: false,
-    //     message: `You can not fill these:- ( ${Object.keys(rest)} )field`,
-    //   });
-    // }
+    if (Object.keys(data).length == 0) return res.status(400).send({ status: false, message: "Please fill data in body" });
 
-    if (Object.keys(data).length == 0) {
-      return res.status(400).send({ status: false, message: "Please fill data in body" });
-    }
+    let errors = []
 
-    let arr = ["pending", "completed", "cancelled"];
-    if (!arr.includes(status.trim())) {
-      return res.status(400).send({ status: false, message: `the value status must be amoung these (${arr})`, });
-    }
+    V_userIdInParam(userId, errors)
 
-    // // ------------ checking user in DB -------------
-    // let user_in_DB = await userModel.findById(userId);
-    // if (!user_in_DB) {
-    //   return res.status(404).send({ status: false, message: "user not found" });
-    // }
+    V_orderIdInBody(orderId, errors)
+
+    V_statusForOrder(status, errors)
+
+    validRest(rest, errors)
+
+    if (errors.length > 0) return res.status(400).send({ status: false, message: ` ( ${errors} )` });
+
 
     // ------------ checking order in DB -------------
     let order_of_user = await orderModel.findOne({ userId: userId });
@@ -117,7 +105,7 @@ async function updateOrder(req, res) {
 
 
     // ------------ checking order status in DB -------------
-    if (order_of_user.status != "cancelled") {
+    if (order_of_user.status != "pending") {
       // if (order_of_user.status === "completed" || order_of_user.status === "cancelled") {
 
       return res.status(400).send({ status: false, message: `the order is already ${order_of_user.status}`, });
@@ -125,16 +113,19 @@ async function updateOrder(req, res) {
 
     // ------------ checking order is cancelable or not  -------------
     if (status === "cancelled") {
-      if (order_of_user.cancellable === true) {
-        let updatedOrder = await orderModel.findOneAndUpdate({ userId: userId }, { status: "cancelled" }, { new: true }
-        );
-
-        return res.status(200).send({ status: true, message: "Success", data: updatedOrder, });
+      if (order_of_user.cancellable === false) {
+        // if not cancelable
+        return res.status(400).send({ status: false, message: "these order is not cancellable", });
       }
 
-      return res.status(400).send({ status: false, message: "these order is not cancellable", });
+      // if  cancelable    then canelling the order
+      let updatedOrder = await orderModel.findOneAndUpdate({ userId: userId }, { status: "cancelled" }, { new: true });
+
+      return res.status(200).send({ status: true, message: "Success", data: updatedOrder, });
+
     }
 
+    // ------------ if user is sending status == completed  -------------
     let updatedOrder = await orderModel.findOneAndUpdate({ userId: userId }, { status: status }, { new: true });
 
     return res.status(200).send({ status: true, message: "Success", data: updatedOrder, });

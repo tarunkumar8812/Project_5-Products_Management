@@ -9,6 +9,8 @@ const { createCart, updateCart, getCart, deleteCart, } = require("../controllers
 
 const { createOrder, updateOrder } = require("../controllers/orderController");
 
+const { createReview } = require("../controllers/reviewController");
+
 const { authentication, authorization } = require("../middleware/auth");
 
 // -------------------------- User APIs --------------------------
@@ -37,4 +39,6 @@ router.delete("/users/:userId/cart", authentication, authorization, deleteCart);
 router.post("/users/:userId/orders", authentication, authorization, createOrder);
 router.put("/users/:userId/orders", authentication, authorization, updateOrder);
 
+// ------------------------- Order APIs -------------------------
+router.post("/productReview/:userId", authentication, authorization, createReview);
 module.exports = router;

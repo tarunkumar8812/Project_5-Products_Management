@@ -26,7 +26,7 @@ async function createUser(req, res) {
 
     if (files.length == 0) { errors.push("profileImage") }
 
-    if (errors.length > 0) { return res.status(400).send({ status: false, message: ` ( ${errors} ) is/are mandatory` }); }
+    if (errors.length > 0) { return res.status(400).send({ status: false, message: `( ${errors} ) is/are mandatory` }); }
 
     data.address = JSON.parse(data.address);
 
@@ -42,7 +42,7 @@ async function createUser(req, res) {
     validRest(rest, errors)
     validProfileImage(files, errors)
 
-    if (errors.length > 0) { return res.status(400).send({ status: false, message: ` ( ${errors} )` }); }
+    if (errors.length > 0) { return res.status(400).send({ status: false, message: `( ${errors} )` }); }
 
     //  ------- checking uniqueness of phone no. -------
     let phone_in_DB = await userModel.findOne({ phone })
@@ -91,7 +91,9 @@ const login = async function (req, res) {
     if (errors.length > 0) { return res.status(400).send({ status: false, message: ` ( ${errors} ) is/are mandatory` }); }
 
     validEmail(email, errors)
+
     validPW_4_Login(password, errors)
+
     validRest(rest, errors)
 
     if (errors.length > 0) { return res.status(400).send({ status: false, message: ` ( ${errors} )` }); }
@@ -170,13 +172,14 @@ const userUpdate = async function (req, res) {
       toUpdate['password'] = await bcrypt.hash(password.trim(), 5);
     }
 
-
     if (V_address(address, errors) == true) {
       address = JSON.parse(address);
 
       let { shipping, billing } = address;
 
-      let subAdd = shipping, temp = "shipping"
+      let subAdd = shipping
+
+      let temp = "shipping"
 
       for (let i = 0; i < 2; i++) {
 
